@@ -1,0 +1,66 @@
+*** ENVELOPE RECORDS active/789476A26E6 ***
+message_size:            1516             801               1               0            1516               0
+message_arrival_time: Wed Mar 20 18:26:37 2024
+create_time: Wed Mar 20 18:26:37 2024
+named_attribute: log_ident=789476A26E6
+named_attribute: rewrite_context=remote
+named_attribute: sasl_method=LOGIN
+named_attribute: sasl_username=m06d7a53
+sender: SMTP@RAZ-LEE.DE
+named_attribute: log_client_name=unknown
+named_attribute: log_client_address=80.179.33.58
+named_attribute: log_client_port=65067
+named_attribute: log_message_origin=unknown[80.179.33.58]
+named_attribute: log_helo_name=RLG.RAZLEE.CO.IL
+named_attribute: log_protocol_name=ESMTP
+named_attribute: client_name=unknown
+named_attribute: reverse_client_name=80.179.33.58.static.012.net.il
+named_attribute: client_address=80.179.33.58
+named_attribute: client_port=65067
+named_attribute: server_address=85.13.145.137
+named_attribute: server_port=25
+named_attribute: helo_name=RLG.RAZLEE.CO.IL
+named_attribute: protocol_name=ESMTP
+named_attribute: client_address_type=2
+warning_message_time: Wed Mar 20 22:26:37 2024
+named_attribute: dsn_orig_rcpt=rfc822;robert.engel@razlee.gmbh
+original_recipient: robert.engel@razlee.gmbh
+recipient: robert.engel@razlee.gmbh
+*** MESSAGE CONTENTS active/789476A26E6 ***
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=raz-lee.de;
+	s=kas202401261422; t=1710955597;
+	bh=6MD+A6VweV3CIYCPeRCT+t9VEbWrd4QudKi+2XvvhCg=;
+	h=Date:From:Reply-To:To:Subject:From;
+	b=TNaSR7O/fLDMJQB3Cz6MiBpimMaSDXHTi6QwM1aq7NhUt2HVU7azEVIhY/zhFC3uj
+	 Uc0ehOwygPHQW1QNQcLDNpsxwmRyT0RdRoTHQnB1ab8zN1/z52nmeLul7ONF+LEJdr
+	 cnOfpNkwodazJhcAlgWTKU1hHbb/CfyzvavTGtm7X8JlsD+qW4JcUjXcwNFDkaw2CS
+	 F1dRYIY2uCo7KMLxZRCXp+eaE4DedZcz/SG3qI6FfGyZbG7m7SI0Kjn/Hva1ajM8ZI
+	 dTzSWksAClT1FYkJoeOqCWszSlB/kBCWKP2lkRyFgZ+yBJjxNmWLXr28SKjt5eMvSa
+	 HQEZBm8t9bdBw==
+Received: from RLG.RAZLEE.CO.IL (unknown [80.179.33.58])
+	by dd26600.kasserver.com (Postfix) with ESMTPA id 789476A26E6
+	for <robert.engel@razlee.gmbh>; Wed, 20 Mar 2024 18:26:37 +0100 (CET)
+Date: Wed, 20 Mar 2024 18:26:36 +0100 (CET)
+From: iSecurity_RLG <SMTP@RAZ-LEE.DE>
+Reply-To: SMTP@RAZ-LEE.DE
+To: robert.engel@razlee.gmbh
+Message-ID: <390688992.1.1710955596714@RLG.RAZLEE.CO.IL>
+Subject:  - ACHTUNG! Subsystem nicht aktiv um 2,0
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
+X-Spamd-Bar: /
+
+System name:                                                     
+Subsystem  nicht aktiv                                                  
+Date:  Time:                                                     
+Action Rule: SBS_NOTAC1 02 2,0 Subsystem QBATCH nicht aktiv                                            
+Auto standard msg: *ACTIVE Job 699725/QSYS/QBATCH (RLG) in QBATCH; Function -; Status DEQW; Pty 00000; Type M/; Pool 000000002; Current user QSYS; IP .                                                       
+Run action once per:    600 seconds (10 minutes)                               
+Email sent by Raz-Lee/iSecurity/Action and System Control                      
+Hour of day yyyy-mm-dd.hh:                                             
+                                                                               
+SBS_NOTAC1 02 2,0 Subsystem QBATCH nicht aktiv                                                         
+*** HEADER EXTRACTED active/789476A26E6 ***
+*** MESSAGE FILE END active/789476A26E6 ***
+
