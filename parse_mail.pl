@@ -2,44 +2,39 @@
 use strict;
 use warnings;
 
-#my $input1 = "/yo:/sup:/hello:/yo:/hello:/yup.";
-#my @removes = qw(hello sup);
-#my $remove;
-
-#foreach $remove (@removes){
-#	$input1 =~ s/$remove//g;
-#}
-#print($input1."\n");
-
-#vars
+### VARS
 my $M0 = "named_attribute: sasl_username=";
 my $DATE = "Date:";
 my $FROM = "From:";
 my $TO = "To:";
 my $SUBJECT = "Subject:";
 
-#my $bodystart="<body";
-my $bodyend = "/body>";
+my $bodystart="<body";
+my $bodyend = "\/body>";
 my $body = "";
-my $bod = "";
-#my $delete = "&nbsp; &copy;";
+my @removes = qw(&nbsp; &copy; \t);
 
 my $stuff_path = '/home/vinzenz/mailparse/mail_unformated';
 my $PIPE = "";
+my $CTYPE = 0;
 
+### FUNCTIONS
+sub remove_strings {
+	my ($input, $rem) = @_;
+	my @rem = @{ $rem };
+	
+	foreach my $remove (@rem){
+		$input =~ s/$remove//g;
+	}
+	return $input;
+}
 
-#while(<STDIN>)
-#{
-#  $PIPE .= $_;
-  
-#  if ($PIPE =~ m/$M0/) {
-#  	print $_;
-#  };
-#}
-
+### MAIN
 foreach my $line ( <STDIN> ) {
     chomp( $line );
+	$PIPE .= $line;
 
+	### MAIL HEADER
 	if ($line =~ m/^$M0/) {
 		#named_attribute: sasl_username=m05ad8d7
 		$line =~ s/^[^=]*=//;
@@ -65,36 +60,32 @@ foreach my $line ( <STDIN> ) {
 		$line =~ s/^[^:]*:\s//;
   		printf "%s:\t%s\n", "Betreff", $line;
 	};
+	
+	### MAIL CONTENT
+	if ($line =~ m/^Content-Type: text\/html;/) {
+		$CTYPE = 1
+	}
+	if ($line =~ m/^Content-Type: text\/plain;/) {
+		$CTYPE = 2
+	}
+	
+	if ($line =~ m/^.*$bodyend/) {
+		$PIPE =~ s/.*$bodystart/$bodystart.*/;		# alles bis <body raus
+		$PIPE =~ s/$bodyend.*/.*$bodyend/;			# alles nach /body> raus
+		$PIPE = remove_strings($PIPE, \@removes);	# spezielle tags raus
+		$PIPE =~ s|<.+?>||g;						# html raus
+		$PIPE =~ s/\h+/ /g;							# remove multispaces
+  		printf "%s:\t%s\n", "Content", "$PIPE";
+	};
 }
 
+if ($CTYPE == 2){
+	$PIPE =~ s/.*X-Spamd-Bar://;				# alles bis raus
+	$PIPE =~ s/\*\*\*.*/\*\*\*/;				# alles nach raus
+	$PIPE = remove_strings($PIPE, \@removes);	# spezielle tags raus
+	$PIPE =~ s/\h+/ /g;							# replace multispaces with single space
+	printf "%s:\t%s\n", "Content", "$PIPE";
+}
 
-
-
-
-#if [[ $line == "$M0"* ]]; then
-#			echo "sasl" $'\t\t' $(echo ${line} | cut -d'=' -f2)
-#       fi
-
-
-#print "This was read from the pipe:\n";
-#print "<$PIPE>\n\n";
-
-#print "This was the read from the parameters:\n";
-#print "<@{ARGV}>\n";
-
-
-#open (my $stuff, '<', $stuff_path)
-#    or die "Cannot open'$stuff_path' for read : $!\n";
-
-# My preferred method to loop over a file line by line:
-# while loop with explicit variable
-#while( my $line = <$stuff> ) {
-#    print "Line $. is : $line\n";
-#}
-
-#open my $fh, "<", $ARGV[0] or die $!;
-#while (<$fh>) {
-	#print "Line $. is : $_";
-#}
-
+### END
 1
