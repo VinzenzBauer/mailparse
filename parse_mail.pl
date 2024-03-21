@@ -1,6 +1,7 @@
 #!/usr/bin/perl -w
 use strict;
 use warnings;
+use HTML::Strip;
 
 ### VARS
 my $M0 = "named_attribute: sasl_username=";
@@ -74,10 +75,23 @@ foreach my $line ( <STDIN> ) {
 		$PIPE =~ s/$bodyend.*/.*$bodyend/;			# alles nach /body> raus
 		$PIPE = remove_strings($PIPE, \@removes);	# spezielle tags raus
 		$PIPE =~ s|<.+?>||g;						# html raus
+		#$PIPE =~ s|{.+?}||g;						# webkit raus
+		$PIPE =~ s/{.+}//sg;
 		$PIPE =~ s/\h+/ /g;							# remove multispaces
+		
+		#my $hs = HTML::Strip->new();
+		#my $clean_text = $hs->parse( $PIPE );
+		#$hs->eof;
+
   		printf "%s:\t%s\n", "Content", "$PIPE";
 	};
 }
+
+#my $hs = HTML::Strip->new();
+#my $clean_text = $hs->parse( $PIPE );
+#$hs->eof;
+#printf "%s:\t%s\n", "Content", "$clean_text";
+		
 
 if ($CTYPE == 2){
 	$PIPE =~ s/.*X-Spamd-Bar://;				# alles bis raus
