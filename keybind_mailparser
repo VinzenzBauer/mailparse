@@ -1,0 +1,15 @@
+#!/bin/bash
+
+#tmpYmiAzySAYLlvSB
+selected=$(xclip -o)
+if ! [[ $selected =~ ^tmp[0-9a-Z]{14}$ ]]; then
+        $(notify-send "mailid" "missmatch!")
+        exit 1
+fi
+
+setxkbmap de
+windowid=$(xdotool getwindowfocus)
+command="cat $selected | perl <(wget -qO- https://raw.githubusercontent.com/VinzenzBauer/mailparse/main/parse_mail.pl)"
+sleep 0.1 && xdotool windowactivate --sync $windowid
+echo "$command" | xclip -r
+xdotool click 2

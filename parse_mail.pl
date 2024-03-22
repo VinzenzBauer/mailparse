@@ -1,7 +1,6 @@
 #!/usr/bin/perl -w
 use strict;
 use warnings;
-use HTML::Strip;
 use MIME::Base64;
 
 ### VARS
