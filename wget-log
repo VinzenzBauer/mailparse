@@ -1,0 +1,11 @@
+--2024-03-22 19:14:47--  https://raw.githubusercontent.com/VinzenzBauer/mailparse/main/parse_mail.pl
+Auflösen des Hostnamens raw.githubusercontent.com (raw.githubusercontent.com) … 185.199.108.133, 185.199.110.133, 185.199.109.133, ...
+Verbindungsaufbau zu raw.githubusercontent.com (raw.githubusercontent.com)|185.199.108.133|:443 … verbunden.
+HTTP-Anforderung gesendet, auf Antwort wird gewartet … 200 OK
+Länge: 2475 (2,4K) [text/plain]
+Wird in »STDOUT« gespeichert.
+
+-                                              0%[                                                                                               ]       0  --.-KB/s               -                                            100%[==============================================================================================>]   2,42K  --.-KB/s    in 0s      
+
+2024-03-22 19:14:47 (166 MB/s) - auf die Standardausgabe geschrieben [2475/2475]
+
