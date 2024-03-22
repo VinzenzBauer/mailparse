@@ -1,4 +1,4 @@
 mail_un*
-wget*
-test*
-tmp*
+wget-log*
+test.pl
+tmp.pl
