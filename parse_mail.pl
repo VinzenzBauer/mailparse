@@ -88,10 +88,6 @@ foreach my $line ( <STDIN> ) {
 		#$dup =~ s|{.+?}||g;						# webkit raus
 		$dup =~ s/{.+}//sg;							# webkit raus
 		$dup =~ s/\h+/ /g;							# remove multispaces
-		
-		#my $hs = HTML::Strip->new();
-		#my $clean_text = $hs->parse( $dup );
-		#$hs->eof;
 
   		printf "%s:\t%s\n", "Content", "$dup";
 	};
