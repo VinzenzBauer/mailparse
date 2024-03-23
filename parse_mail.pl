@@ -4,18 +4,18 @@ use warnings;
 use MIME::Base64;
 
 ### VARS
-my $M0 = "named_attribute: sasl_username=";
-my $DATE = "Date:";
-my $FROM = "From:";
-my $TO = "To:";
-my $SUBJECT = "Subject:";
+my $M0 = "named_attribute: sasl_username=";				#named_attribute: sasl_username=m05ad8d7
+my $IP = "named_attribute: client_address=";			#client_address=209.85.128.197
+my $DATE = "Date:.+[0-9]{2}:[0-9]{2}:[0-9]{2}.+/";		#Date: Wed, 20 Mar 2024 16:31:40 +0000 (UTC)
+my $FROM = "From:";										#From: TPMS-SAS-Live <tpms-sas-live@auto.prodefis-outbox.de>
+my $TO = "To:";											#To: "Messing Ragert, Ingrid  10162" <10162@sas.dk>
+my $SUBJECT = "Subject:";								#Subject: Event report Filed
 
-my $bodystart="<body";
+my $bodystart="<body>";
 my $bodyend = "\/body>";
 my $body = "";
 my @removes = qw(&nbsp; &copy; \t);
 
-my $stuff_path = '/home/vinzenz/mailparse/mail_unformated';
 my $PIPE = "";
 my $CTYPE = 0;
 my $BASE64 = 0;
@@ -37,29 +37,28 @@ foreach my $line ( <STDIN> ) {
     chomp( $line );
 	$PIPE .= $line;
 
-	### MAIL HEADER
+	### MAIL HEAD
 	if ($line =~ m/^$M0/) {
-		#named_attribute: sasl_username=m05ad8d7
 		$line =~ s/^[^=]*=//;
   		printf "%s:\t%s\n", "Postfach", $line;
 	};
+	if ($line =~ m/$IP/) {
+		$line =~ s/^[^=]*=//;
+  		printf "%s:\t\t%s\n", "Ip", $line;
+	};
 	if ($line =~ m/^$DATE/) {
-		#Date: Wed, 20 Mar 2024 16:31:40 +0000 (UTC)
 		$line =~ s/^[^,]*\s,//;
   		printf "%s:\t\t%s\n", "Am", $line;
 	};
 	if ($line =~ m/^$FROM/) {
-		#From: TPMS-SAS-Live <tpms-sas-live@auto.prodefis-outbox.de>
 		$line =~ s/^[^:]*:\s//;
   		printf "%s:\t\t%s\n", "Von", $line;
 	};
 	if ($line =~ m/^$TO/) {
-		#To: "Messing Ragert, Ingrid  10162" <10162@sas.dk>
 		$line =~ s/^[^:]*:\s//;
   		printf "%s:\t\t%s\n", "An", $line;
 	};
 	if ($line =~ m/^$SUBJECT/) {
-		#Subject: Event report Filed
 		$line =~ s/^[^:]*:\s//;
   		printf "%s:\t%s\n", "Betreff", $line;
 	};
@@ -80,9 +79,7 @@ foreach my $line ( <STDIN> ) {
 	### HTML CONTENT
 	if ($line =~ m/^.*$bodyend/) {
 		$dup = $PIPE;
-		#$dup =~ s/.*$bodystart/$bodystart.*/;		# alles bis <body raus
-		#$dup =~ s/$bodyend.*/.*$bodyend/;			# alles nach /body> raus
-		$dup =~ s/.*$bodystart>(.*)$bodyend/$1/;	# zwischen start und end
+		$dup =~ s/.*$bodystart(.*)$bodyend/$1/;		# zwischen start und end
 		$dup = remove_strings($dup, \@removes);		# spezielle tags raus
 		$dup =~ s|<.+?>||g;							# html raus
 		#$dup =~ s|{.+?}||g;						# webkit raus
