@@ -42,6 +42,9 @@ sub decode_iso_8859_1_base64 {		# bsp 5: subject from etc waren base64 mit iso-t
 }
 sub decode_guess{
 	my $line = shift;
+	if ($line =~ m/@/){
+		return $line;	# könnte ein mix mit klarzeichen sein -> abbruch
+	}
 	if ($line =~ m/=\?iso-8859/) {
 		return decode_iso_8859_1_base64("$line");
 	};
@@ -70,7 +73,7 @@ sub printHeaderInfo{
 		};
 		if ($line =~ m/^$TO/) {
 			$line =~ s/^[^:]*:\s//;
-			$line = decode_guess("$line");
+			$line = decode_guess("$line");					# bsp 20
 			printf "%s:\t\t%s\n", "to", $line;
 		};
 		if ($line =~ m/^$REPLYTO/) {
