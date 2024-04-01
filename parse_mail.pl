@@ -3,6 +3,7 @@ use strict;
 use warnings;
 use MIME::Base64;
 use Term::ANSIColor;
+use MIME::QuotedPrint;
 
 ### VARS
 my $M0 = "named_attribute: sasl_username=";         #named_attribute: sasl_username=m05ad8d7
@@ -22,6 +23,7 @@ my @removes_iso = qw/ =\?iso-8859-1\?B\? =\?= \?= /;				# bsp: 5
 
 my $PIPE = "";
 my $base64 = "";
+my $qp = "";
 my $content = "";
 
 my $bounce = 0;
@@ -37,7 +39,7 @@ sub remove_strings {
     return $input;
 }
 sub decode_iso_8859_1_base64 {		# bsp 5: subject from etc waren base64 mit iso-tags zb: =?iso-8859-1?B?Kysg
-	my $encoded = shift;
+	my $encoded = shift || '';
 	$encoded = remove_strings($encoded, \@removes_iso);
 	my $decoded = MIME::Base64::decode($encoded);
     return $decoded;
@@ -51,6 +53,13 @@ sub decode_guess{
 		return decode_iso_8859_1_base64("$line");
 	};
 	return $line;
+}
+sub clean_decoded{
+	my $dec = shift || '';
+	$dec =~ s|<.+?>||g;              		# html raus (manche links können von interesse sein)           
+	$dec =~ s/^ +//gm ;						# remove whitespaces at start of line
+	$dec =~ s/\n\s*/\n/g;					# remove empty lines
+    return $dec;
 }
 sub printHeaderInfo{
 	my $head = shift;
@@ -149,6 +158,21 @@ if ($body)
 	if ( !$bounce ){		# bsp 6 ist ein bounce -> nix valides zum zeigen
 		print color("green"), "$content\n", color("reset");
 	}
+	
+	### QP TEXT CONTENTS			# (bsp: 25)
+	if ($body =~ /Content-Type: (text\/plain|text\/html);(?=.{5,200}Content-Transfer-Encoding: quoted-printable)/s) {
+		#print color("red"), "QP DECODE:\n", color("reset");
+		$qp = $body;
+
+		while ($qp =~ /Content-Type: (text\/plain|text\/html);((.*?\n?.*?){0,3})(Encoding: quoted-printable)((.*?\n?.*?)+),/g){ # bsp: 26
+			my $type = $1;
+			my $qpent = $5;
+			#print color("red"), "ausgabe: ", color("reset"), "$5 ", pos $qp, "\n";
+			$qpent = decode_qp($qpent);
+			$qpent = clean_decoded("$qpent");
+			print color("red"), "QP(", color("white"), "$type", color("red"), ") DECODE: ", color("yellow"), "$qpent\n", color("reset");
+		}
+	}
 
 	### BASE64 TEXT CONTENTS			# (bsp: 6 23)
 	if ($body =~ /Content-Type: (text\/plain|text\/html);(?=.{5,200}Content-Transfer-Encoding: base64)/s) {
@@ -160,9 +184,7 @@ if ($body)
 			my $b64ent = $5;
 			#print color("red"), "ausgabe: ", color("reset"), "$5 ", pos $base64, "\n";
 			$b64ent = MIME::Base64::decode($b64ent);
-			$b64ent =~ s|<.+?>||g;                      # html raus (manche links können von interesse sein)           
-			$b64ent =~ s/^ +//gm ;						# remove whitespaces at start of line
-			$b64ent =~ s/\n\s*/\n/g;					# remove empty lines
+			$b64ent = clean_decoded("$b64ent");
 			print color("red"), "Base64(", color("white"), "$type", color("red"), ") DECODE: ", color("yellow"), "$b64ent\n", color("reset");
 		}
 	}
