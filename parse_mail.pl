@@ -6,17 +6,19 @@ use Term::ANSIColor;
 
 ### VARS
 my $M0 = "named_attribute: sasl_username=";         #named_attribute: sasl_username=m05ad8d7
-my $IP = "named_attribute: client_address=";        #client_address=209.85.128.197
+my $IP = "named_attribute: client_address=";        #client_address=209....197
 my $DATE = "Date:.*[0-9]{2}:[0-9]{2}:[0-9]{2}";     #Date: Wed, 20 Mar 2024 16:31:40 +0000 (UTC)
-my $FROM = "From:";                                	#From: TPMS-SAS-Live <tpms-sas-live@auto.prodefis-outbox.de>
+my $FROM = "From:";                                	#From: TPMS-SAS-Live <tpms-sas-outbox.de>
 my $TO = "To:";                                     #To: "Messing Ragert, Ingrid  10162" <10162@sas.dk>
 my $SUBJECT = "Subject:";                           #Subject: Event report Filed
+my $XSENDER = "X-SenderIP:";						#X-SenderIP: 84.....120 bsp 21
 my $REPLYTO = "Reply-To:";
+my $RECEIVED = "Received:";							# Received: from ....ru (unknown [147....106]) bsp 23
 						
 my $htmlstart="<[t]?body.*?>";						#<body class="mainBody"> #<tbody>
 my $htmlend = "<.*?\/[t]?body>";					#hmtl tag not exist in 3
-my @removes = qw/ &nbsp; &copy; \t =09 &quot; = &zwnj; 0A /;			# bsp: 1
-my @removes_iso = qw/ =\?iso-8859-1\?B\? =\?= \?= /;		# bsp: 5
+my @removes = qw/ &nbsp; &copy; \t =09 &quot; = &zwnj; 0A /;		# bsp: 1
+my @removes_iso = qw/ =\?iso-8859-1\?B\? =\?= \?= /;				# bsp: 5
 
 my $PIPE = "";
 my $base64 = "";
@@ -43,7 +45,7 @@ sub decode_iso_8859_1_base64 {		# bsp 5: subject from etc waren base64 mit iso-t
 sub decode_guess{
 	my $line = shift;
 	if ($line =~ m/@/){
-		return $line;	# könnte ein mix mit klarzeichen sein -> abbruch
+		return $line;	# könnte ein mix mit klarzeichen sein -> abbruch bsp 20
 	}
 	if ($line =~ m/=\?iso-8859/) {
 		return decode_iso_8859_1_base64("$line");
@@ -56,15 +58,28 @@ sub printHeaderInfo{
 	foreach my $line (@headA) {
 		if ($line =~ m/^$M0/) {
 			$line =~ s/^[^=]*=//;
-			printf "%s:\t\t%s ", "sasl", $line;
+			printf "%s:\t\t%s\n", "sasl", $line;
 		};
 		if ($line =~ m/$IP/) {
 			$line =~ s/^[^=]*=//;
-			printf "<%s>\n", $line;
+			printf "%s:\t\t%s\n", "ip", $line;
 		};
+		if ($line =~ m/^$RECEIVED/) {
+			$line =~ s/^[^:]*:\s//;
+			printf "%s:\t%s\n", "received", $line;
+		};
+		#if ($line =~ m/\[(([0-9]{0,3}.){3}[0-9]{0,3})\]/) {
+		#	$line =~ s/\[(([0-9]{0,3}.){3}[0-9]{0,3})\]/$1/;
+		#	printf "%s:\t\t%s\n", "ip2", $1;
+		#};
 		if ($line =~ m/^$DATE/) {
 			$line =~ s/^[^,]*,\s//;
 			printf "%s:\t\t%s\n", "date", $line;
+		};
+		if ($line =~ m/^$XSENDER/) {
+			$line =~ s/^[^:]*:\s//;
+			$line = decode_guess("$line");
+			printf "%s:\t\t%s\n", "sender", $line;
 		};
 		if ($line =~ m/^$FROM/) {
 			$line =~ s/^[^:]*:\s//;
@@ -112,24 +127,20 @@ $content =~ s/^ +//gm ;							# remove whitespaces at start of line
 $content =~ s/\n\s*/\n/g;						# remove empty lines
 $content =~ s/\h+/ /g;                        	# replace multispaces with single space
 
-if ($body =~ /I'm sorry to have to inform you that your message could not/s) {
-
-	## ERROR EG.: Content-Description: Undelivered Message
-	#Reply-To: WinBTC <bitcoin-mining@groupalim.com>
-	#From: WinBTC <benjamin@widmann-elektrotechnik.de>
-	#Subject: Balance Mining BTC 
-	#Date: Fri, 22 Mar 2024 16:29:30 +0000
+if ($body =~ /(our message could not)/s) {
+# problem derzeit mit bsp 19  der ist nach spam-d leer
 	print '-' x 80, "\n"; 
 	$bounce = 1;
 	printHeaderInfo($body);
 	
 	# bsp: 10 alles nach X-Spamd-Bar: von interesse: Hallo * * * 馃獧 袙袗袦 袟袗效袠小袥袝袧袨 ...
-	if ($body =~ /X-Spamd-Bar: \/\n/s) {
+	if ($body =~ /X-Spamd-Bar:/s) {
 		$content = $body;
-		$content =~ s/.*?X-Spamd-Bar: \/\n(.*?)--.*/$1/s;
+		$content =~ s/.*?X-Spamd-Bar:.*?\n(.*)(--.*--)\n(\*\*\*.*\*\*\*)/$1/s;
 		$content =~ s/\R//g;							# remove linebreaks
 		$content =~ s|<.+?>||g;                         # html raus
-		
+		$content = remove_strings($content, \@removes);
+		$content =~ s/^ +//gm ;							# remove whitespaces at start of line
 		print color("green"), "$content\n", color("reset");
 	}
 }
@@ -138,7 +149,7 @@ if ( !$bounce ){		# bsp 6 ist ein bounce -> nix valides zum zeigen
 	print color("green"), "$content\n", color("reset");
 }
 
-### BASE64 TEXT CONTENTS			# (bsp: 6 )
+### BASE64 TEXT CONTENTS			# (bsp: 6 23)
 if ($body =~ /Content-Type: (text\/plain|text\/html);(?=.{5,200}Content-Transfer-Encoding: base64)/s) {
 	#print color("red"), "Base64 DECODE:\n", color("reset");
 	$base64 = $body;
