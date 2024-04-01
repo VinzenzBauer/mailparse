@@ -117,7 +117,7 @@ printHeaderInfo($head);
 
 ### MAIL BODY
 ## HTML CONTENT (bsp: 1, 3, 7)
-$content = $body; 
+$content = $body || '';
 $content =~ s/\R//g;							# remove linebreaks
 $content =~ s/.*?$htmlstart(.*)$htmlend.*/$1/s;	# extract content between html-body-tags
 $content =~ s|<.+?>||g;                         # html raus
