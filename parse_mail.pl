@@ -43,7 +43,7 @@ sub decode_iso_8859_1_base64 {		# bsp 5: subject from etc waren base64 mit iso-t
     return $decoded;
 }
 sub decode_guess{
-	my $line = shift;
+	my $line = shift || '';
 	if ($line =~ m/@/){
 		return $line;	# könnte ein mix mit klarzeichen sein -> abbruch bsp 20
 	}
@@ -68,10 +68,6 @@ sub printHeaderInfo{
 			$line =~ s/^[^:]*:\s//;
 			printf "%s:\t%s\n", "received", $line;
 		};
-		#if ($line =~ m/\[(([0-9]{0,3}.){3}[0-9]{0,3})\]/) {
-		#	$line =~ s/\[(([0-9]{0,3}.){3}[0-9]{0,3})\]/$1/;
-		#	printf "%s:\t\t%s\n", "ip2", $1;
-		#};
 		if ($line =~ m/^$DATE/) {
 			$line =~ s/^[^,]*,\s//;
 			printf "%s:\t\t%s\n", "date", $line;
@@ -113,56 +109,62 @@ foreach my $line ( <STDIN> ) {
 my ($head, $body) = split /\n\h*\n/, $PIPE, 2;
 
 ### MAIL HEAD
-printHeaderInfo($head);
+if ($head)
+{
+	printHeaderInfo($head);
+}
 
 ### MAIL BODY
-## HTML CONTENT (bsp: 1, 3, 7)
-$content = $body || '';
-$content =~ s/\R//g;							# remove linebreaks
-$content =~ s/.*?$htmlstart(.*)$htmlend.*/$1/s;	# extract content between html-body-tags
-$content =~ s|<.+?>||g;                         # html raus
-$content =~ s/{.+}//sg;                         # webkit raus
-$content = remove_strings($content, \@removes);	# spezielle tags raus
-$content =~ s/^ +//gm ;							# remove whitespaces at start of line
-$content =~ s/\n\s*/\n/g;						# remove empty lines
-$content =~ s/\h+/ /g;                        	# replace multispaces with single space
+if ($body)
+{
+	## HTML CONTENT (bsp: 1, 3, 7)
+	$content = $body || '';
+	$content =~ s/\R//g;							# remove linebreaks
+	$content =~ s/.*?$htmlstart(.*)$htmlend.*/$1/s;	# extract content between html-body-tags
+	$content =~ s|<.+?>||g;                         # html raus
+	$content =~ s/{.+}//sg;                         # webkit raus
+	$content = remove_strings($content, \@removes);	# spezielle tags raus
+	$content =~ s/^ +//gm ;							# remove whitespaces at start of line
+	$content =~ s/\n\s*/\n/g;						# remove empty lines
+	$content =~ s/\h+/ /g;                        	# replace multispaces with single space
 
-if ($body =~ /(our message could not)/s) {
-# problem derzeit mit bsp 19  der ist nach spam-d leer
-	print '-' x 80, "\n"; 
-	$bounce = 1;
-	printHeaderInfo($body);
-	
-	# bsp: 10 alles nach X-Spamd-Bar: von interesse: Hallo * * * 馃獧 袙袗袦 袟袗效袠小袥袝袧袨 ...
-	if ($body =~ /X-Spamd-Bar:/s) {
-		$content = $body;
-		$content =~ s/.*?X-Spamd-Bar:.*?\n(.*)(--.*--)\n(\*\*\*.*\*\*\*)/$1/s;
-		$content =~ s/\R//g;							# remove linebreaks
-		$content =~ s|<.+?>||g;                         # html raus
-		$content = remove_strings($content, \@removes);
-		$content =~ s/^ +//gm ;							# remove whitespaces at start of line
+	if ($body =~ /(our message could not)/s) {
+	# problem derzeit mit bsp 19  der ist nach spam-d leer
+		print '-' x 80, "\n"; 
+		$bounce = 1;
+		printHeaderInfo($body);
+
+		# bsp: 10 alles nach X-Spamd-Bar: von interesse: Hallo * * * 馃獧 袙袗袦 袟袗效袠小袥袝袧袨 ...
+		if ($body =~ /X-Spamd-Bar:/s) {
+			$content = $body;
+			$content =~ s/.*?X-Spamd-Bar:.*?\n(.*)(--.*--)\n(\*\*\*.*\*\*\*)/$1/s;
+			$content =~ s/\R//g;							# remove linebreaks
+			$content =~ s|<.+?>||g;                         # html raus
+			$content = remove_strings($content, \@removes);
+			$content =~ s/^ +//gm ;							# remove whitespaces at start of line
+			print color("green"), "$content\n", color("reset");
+		}
+	}
+
+	if ( !$bounce ){		# bsp 6 ist ein bounce -> nix valides zum zeigen
 		print color("green"), "$content\n", color("reset");
 	}
-}
 
-if ( !$bounce ){		# bsp 6 ist ein bounce -> nix valides zum zeigen
-	print color("green"), "$content\n", color("reset");
-}
+	### BASE64 TEXT CONTENTS			# (bsp: 6 23)
+	if ($body =~ /Content-Type: (text\/plain|text\/html);(?=.{5,200}Content-Transfer-Encoding: base64)/s) {
+		#print color("red"), "Base64 DECODE:\n", color("reset");
+		$base64 = $body;
 
-### BASE64 TEXT CONTENTS			# (bsp: 6 23)
-if ($body =~ /Content-Type: (text\/plain|text\/html);(?=.{5,200}Content-Transfer-Encoding: base64)/s) {
-	#print color("red"), "Base64 DECODE:\n", color("reset");
-	$base64 = $body;
-	
-	while ($base64 =~ /Content-Type: (text\/plain|text\/html);((.*?\n?.*?){0,3})(Encoding: base64)((.*?\n?.*?)+)=/g){
-		my $type = $1;
-		my $b64ent = $5;
-		#print color("red"), "ausgabe: ", color("reset"), "$5 ", pos $base64, "\n";
-		$b64ent = MIME::Base64::decode($b64ent);
-		$b64ent =~ s|<.+?>||g;                      # html raus (manche links können von interesse sein)           
-		$b64ent =~ s/^ +//gm ;						# remove whitespaces at start of line
-		$b64ent =~ s/\n\s*/\n/g;					# remove empty lines
-		print color("red"), "Base64(", color("white"), "$type", color("red"), ") DECODE: ", color("yellow"), "$b64ent\n", color("reset");
+		while ($base64 =~ /Content-Type: (text\/plain|text\/html);((.*?\n?.*?){0,3})(Encoding: base64)((.*?\n?.*?)+)=/g){
+			my $type = $1;
+			my $b64ent = $5;
+			#print color("red"), "ausgabe: ", color("reset"), "$5 ", pos $base64, "\n";
+			$b64ent = MIME::Base64::decode($b64ent);
+			$b64ent =~ s|<.+?>||g;                      # html raus (manche links können von interesse sein)           
+			$b64ent =~ s/^ +//gm ;						# remove whitespaces at start of line
+			$b64ent =~ s/\n\s*/\n/g;					# remove empty lines
+			print color("red"), "Base64(", color("white"), "$type", color("red"), ") DECODE: ", color("yellow"), "$b64ent\n", color("reset");
+		}
 	}
 }
 
