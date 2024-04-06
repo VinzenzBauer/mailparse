@@ -7,13 +7,13 @@ setxkbmap de
 windowid=$(xdotool getwindowfocus)
 
 #tmpYmiAzySAYLlvSB		tmp 14 symbole		sendq
-if [[ $selected =~ ^tmp[0-9a-Z]{14}$ ]]; then
+if [[ $selected =~ ^tmp[0-9a-Z_]{14}$ ]]; then
 	ismail=1
 	command="cat $selected | perl <(wget -qO- https://raw.githubusercontent.com/VinzenzBauer/mailparse/main/parse_mail.pl)"
 fi
 
 #7FD694248CDB			12 große symbole	mailq
-if [[ $selected =~ ^[0-9A-Z]{12}$ ]]; then
+if [[ $selected =~ ^[0-9A-Z_]{12}$ ]]; then
 	ismail=2
 	command="postcat -q $selected | perl <(wget -qO- https://raw.githubusercontent.com/VinzenzBauer/mailparse/main/parse_mail.pl)"
 fi
