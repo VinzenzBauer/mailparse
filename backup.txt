@@ -1,0 +1,418 @@
+#!/usr/bin/perl -w
+use strict;
+use warnings;
+use MIME::Base64;
+use Term::ANSIColor;
+use MIME::QuotedPrint;
+use Data::Dumper qw(Dumper);
+
+### VARS
+my $M0 = "named_attribute: sasl_username=";         #named_attribute: sasl_username=m05ad8d7
+my $IP = "named_attribute: client_address=";        #client_address=209....197
+my $DATE = "Date:.*[0-9]{2}:[0-9]{2}:[0-9]{2}";     #Date: Wed, 20 Mar 2024 16:31:40 +0000 (UTC)
+my $FROM = "From:";                                	#From: TPMS-SAS-Live <tpms-sas-outbox.de>
+my $TO = "To:";                                     #To: "Messing Ragert, Ingrid  10162" <10162@sas.dk>
+my $SUBJECT = "Subject:";                           #Subject: Event report Filed
+my $XSENDER = "X-SenderIP:";						#X-SenderIP: 84.....120 bsp 21
+my $REPLYTO = "Reply-To:";
+my $RECEIVED = "Received:";							# Received: from ....ru (unknown [147....106]) bsp 23	
+		
+my $htmlstart="<[t]?body.*?>";						#<body class="mainBody"> #<tbody>
+my $htmlend = "<.*?\/[t]?body>";					#hmtl tag not exist in 3
+my @removes = qw/ &nbsp; &copy; \t =09 &quot; = &zwnj; 0A /;		# bsp: 1
+
+my $PIPE = "";
+my $base64 = "";
+my $qp = "";
+my $content = "";
+
+my %mail = ('bounce' => 0 );
+
+### SUBROUTINES
+sub decode{
+	my $line = shift || '';
+	my $content = shift || '';
+	my $key = shift || 'enc';
+	
+	$mail{"$content"}{"$key"}{raw} = $line;
+	
+	my $sum_raw = '';
+	my $sum_dec = '';
+	
+	my $inc = 0;
+	my $dec = $line; # bsp 5
+	while ($dec =~ /=\?iso-8859-1\?B\?(.*?)=?=?\?=/g){ 
+		$sum_dec .= MIME::Base64::decode($1);
+		$mail{"$content"}{"iso8859.b64.$inc"}{raw} = $dec;
+		$mail{"$content"}{"iso8859.b64.$inc"}{dec} = MIME::Base64::decode($1);
+		$inc++;
+	};
+	
+	$inc = 0;
+	$dec = $line; # bsp: 28 3
+	#print color("green"), "$dec\n", color("reset");
+	while ($dec =~ /[uUtTfF]{3}-8\?Q\?(.*?)\?=/g){ 
+		$sum_dec .= decode_qp($1);	
+		$mail{"$content"}{"qp.$inc"}{raw} = $dec;
+		$mail{"$content"}{"qp.$inc"}{dec} = decode_qp($1);
+		$inc++;
+	}
+	
+	$inc = 0;
+	$dec = $line; # bsp: 14 28 
+	while ($dec =~ /[uUtTfF]{3}-8\?B\?(.*?)=?=?\?=/g){ 
+		$sum_dec .= MIME::Base64::decode($1);
+		$mail{"$content"}{"b64.$inc"}{raw} = $dec;
+		$mail{"$content"}{"b64.$inc"}{dec} = MIME::Base64::decode($1);
+		$inc++;
+	}
+	
+	$dec = $line; # bsp 6
+	while ($dec =~ /Content-Type: (text\/plain|text\/html);((.*?\n?.*?){0,3})(Encoding: base64)((.*?\n?.*?)+)=/g){ 
+		#my $type = $1;
+		#my $b64en = $5;
+		#$sum_b64_body .= $b64en;
+		$sum_raw .= $5;
+		$sum_dec .= MIME::Base64::decode($5);
+		$mail{"$content"}{"b64.$inc"}{raw} = $5;
+		$mail{"$content"}{"b64.$inc"}{dec} = MIME::Base64::decode($5);
+		$inc++;
+		
+		#$sum_b64 .= $b64en;
+		#$b64en = clean_string($b64en);
+		#$sum_b64_clean .= $b64en;
+		#decode("$5", "body", "b64");	
+	}
+	
+	if ($key ne "enc"){
+		if (defined $sum_dec && $sum_dec ne '') {
+			$mail{"$content"}{"$key"}{raw} = $sum_raw;
+			$mail{"$content"}{"$key"}{dec} = $sum_dec;
+		}else{
+			$mail{"$content"}{"$key"}{dec} = $line;
+		}
+	}
+	
+	
+	
+	
+			
+	#my $bodyb64		= qr/ype: text\/(plain|html);((.*?\n?.*?){0,3})Encoding: (base64)\n((.*?|\n)+)=/; # 6
+	#my $bodyqp			= qr/ype: text\/(plain|html);((.*?\n?.*?){0,3})Encoding: quoted-printable\n((.*\n.*)+)\n\n/; # 13
+	#my $bodyqp			= qr/ype: text\/(plain|html);((.*?\n?.*?){0,3})Encoding: quoted-printable\n\n((.*?|\n?)+)(<\/html>|<\/body>|\*\*\*)/; # 7 12 13
+	#my $bodyqp			= qr/ype: text\/(plain|html);((.*?\n?.*?){0,3})Encoding: quoted-printable\n((.*\n.*)+)\n\n/; # 13 55
+	#my $htmlutf8nbit	= qr/ype: text\/(html); charset=\"?([uUtTfF]{3}-8)\"?((.*?\n?.*?){0,3})Encoding: (.bit)\n((.*?|\n?)+(<\/html>|<\/t?body>|\*\*\*))/; # 1 3
+	#my $html8859nbit	= qr/ype: text\/(html); charset=\"?(iso-8859-1)\"?((.*?\n?.*?){0,3})Encoding: (.bit)\n((.*?|\n?)+(<\/html>|<\/t?body>|\*\*\*))/; # 5
+	#my $htmlutf8		= qr/ype: text\/(html); charset=\"?([uUtTfF]{3}-8)\"?\n((.*?|\n?)+)(<\/html>|<\/t?body>|\*\*\*)/; # 9 10
+	#my $plainutf8nbit	= qr/ype: text\/(plain); charset=\"?([uUtTfF]{3}-8)\"?((.*?\n?.*?){0,3})Encoding: (.bit)\n((.*|\n)+)\n\n/; # 1
+	#my $plainutf8nbit	= qr/ype: text\/(plain); charset=\"?([uUtTfF]{3}-8)\"?((.*?\n?.*?){0,3})Encoding: (.bit)\n((.*?|\n?)+)(<\/html>|<\/t?body>|\*\*\*)/; # 1 2
+	#my $nbitplainutf8	= qr/ncoding: (.bit)\n((.*?\n?.*?){0,3})ype: text\/(plain); charset=\"?([uUtTfF]{3}-8)\"?\n((.*\n.*)+)\n/; # 28
+	
+	
+	
+	#$inc = 0;
+		#foreach my $m (@sA) {
+			#if ($inc == 0) { $inc++; next; }		# SKIP HEADER DATA
+
+		#	print color("yellow"), "content $inc: ", color("green"), $m, color("reset"), "\n";
+			
+			#if ($m =~ /$htmlutf8/g){								# bsp 9
+			#	if ($m =~ /$htmlutf8nbit/g){						# bsp 1 3 4
+			#		$plain_text = $6;
+			#		$typecode = "$1.$2.$5";
+			#	}else{
+			#		$plain_text = $3;
+			#		#$plain_text = remove_strings($plain_text, \@removes);
+			#		#print color("yellow"), "content: ", color("green"), $plain_text, color("reset"), "\n";
+			#		$typecode = "$1.$2";
+			#	}
+			#	$plain_text = HTML::FormatText->format_string($plain_text);
+			#	#$plain_text = clean_string($plain_text);
+			#	#$plain_text = clean_body($plain_text);
+			#		
+			#	$mail{"$key"}{"$key2"}{"$inc"}{"$typecode"}{cln} =  $plain_text;
+			#}
+			#if ($m =~ /$plainutf8nbit/g){						# bsp 1 2
+			#	$plain_text = $6;
+			#	$plain_text = HTML::FormatText->format_string($plain_text);
+			#	$plain_text = clean_string($plain_text);
+			#	$plain_text = clean_body($plain_text);
+			#	$mail{"$key"}{"$key2"}{"$inc"}{"$1.$2.$5"}{cln} =  $plain_text;
+			#}
+			#if ($m =~ /$bodyb64/g){					# bsp 6
+			#	$plain_text = $5;
+			#	#print color("yellow"), "content: ", color("green"), $plain_text, color("reset"), "\n";
+			#	$mail{"$key"}{"$key2"}{"$inc"}{"$1.$4"}{enc} = $plain_text;
+			#	$plain_text = MIME::Base64::decode($plain_text);
+			#	#$mail{"$key"}{"$key2"}{"$inc"}{"text.b64"}{dec} = $plain_text;
+			#	$plain_text =~ s|<.+?>||g;			# bsp 6
+			#	$mail{"$key"}{"$key2"}{"$inc"}{"text.b64"}{cln} = clean_string($plain_text);
+			#}
+			#if ($m =~ /$bodyqp/g){								# bsp 12 13 15 16 18 43 55
+			#	$plain_text = $4;
+			#	$plain_text = HTML::FormatText->format_string($plain_text);
+			#	$mail{"$key"}{"$key2"}{"$inc"}{"$1.qp"}{cln} =  $plain_text;
+			#}
+			#if ($m =~ /$nbitplainutf8/g){						# bsp 28
+			#	$plain_text = $6;
+			#	$plain_text = HTML::FormatText->format_string($plain_text);
+			#	$plain_text = clean_string($plain_text);
+			#	$plain_text = clean_body($plain_text);
+			#	$mail{"$key"}{"$key2"}{"$inc"}{"$1.$4.$5"}{cln} =  $plain_text;
+			#}
+			#if ($m =~ /$html8859nbit/g){						# bsp 5
+			#	$plain_text = $6;
+			#	$plain_text = HTML::FormatText->format_string($plain_text);
+			#	$plain_text = clean_string($plain_text);
+			#	$plain_text = clean_body($plain_text);
+			#	$mail{"$key"}{"$key2"}{"$inc"}{"$1.$2.$5"}{cln} =  $plain_text;
+			#}
+		#	$inc++;	
+		#}
+}
+sub clean_string{
+	my $input = shift || '';
+	$input =~ s|<.+?>||g;              		# html raus (manche links können von interesse sein)           
+	#$input =~ s/^ +//gm ;					# remove whitespaces at start of line
+	$input =~ s/\n\s*/\n/g;					# remove empty lines
+	$input =~ s/\*\*\*\s?HEADER.*\*\*\*$//g;	# remove HEADERS
+	$input =~ s/^\s+|\s+$//g;				# trim
+    return $input;
+}
+sub remove_strings {
+    my ($input, $rem) = @_;
+    my @rem = @{ $rem };
+    
+    foreach my $remove (@rem){
+        $input =~ s/$remove//g;
+    }
+    return $input;
+}
+sub printentry {
+	my $input = shift;
+	my $key = shift || 'unknown';
+	if (exists($input->{$key})){
+		$input = $input->{$key};
+	}
+	#print color("yellow"), "printing: $key: ";
+	#print color("yellow"), "content: ", color("green"), $input->{raw}, color("reset"), "\n";
+	
+	$spaces = '';
+
+	## weg::
+	if (exists($input->{raw})){
+
+		if (exists($input->{dec})){
+			if ($input->{"dec"} eq '' || $input->{"raw"} eq $input->{"dec"}){
+				if (length($key) < 5) {$spaces = "\t\t"} else {$spaces = "\t"}
+				print color("yellow"), "$key:$spaces", color("reset"), $input->{"raw"} ."\n";
+			} else {
+				if (length($key) < 0) {$spaces = "\t\t"} else {$spaces = "\t"}
+				#print color("yellow"), "$key ", color("red"), "(dec):$spaces", color("green"), $input->{"dec"}, color("reset")."\n";
+			}
+		}elsif (exists($input->{cln})){
+			if ($input->{"cln"} eq '') {$input->{"cln"} = "[[no content!]]";} # bsp 19 bounce body ist leer
+			if ($input->{"cln"} eq '' || $input->{"raw"} eq $input->{"cln"}){
+				if (length($key) < 5) {$spaces = "\t\t"} else {$spaces = "\t"}
+				print color("yellow"), "$key:$spaces", color("reset"), $input->{"raw"} ."\n";
+			} else {
+				if (length($key) < 0) {$spaces = "\t\t"} else {$spaces = "\t"}
+				#print color("yellow"), "$key ", color("red"), "(cln):$spaces", color("green"), $input->{"cln"}, color("reset")."\n";
+			}
+		}
+
+	}
+}
+sub printentry {
+	my $input = shift;
+	my $content = shift || 'unknown';
+	$input = $input->{$content};
+	
+	my $spaces = '';
+	
+	if (exists($input->{"raw"}) && exists($input->{"dec"})){
+		if ($input) {
+			if ($input->{"raw"} eq $input->{"dec"}){
+				if (length($content) < 5) {$spaces = "\t\t"} else {$spaces = "\t"}
+				print "$content:$spaces". $input->{"raw"} ."\n";
+			} else {
+				if (length($content) < 0) {$spaces = "\t\t"} else {$spaces = "\t"}
+				print color("white"), "$content ", color("red"), "(dec):$spaces", color("reset"), $input->{"dec"} ."\n";
+			}
+		}
+	}
+}
+sub hashHeaderInfo{
+	my $headdata = shift;
+	my $content = shift;
+	
+	my @headA = split (/\n/, $headdata);
+	foreach my $line (@headA) {
+		if ($line =~ m/^$M0/) {
+			$line =~ s/^[^=]*=//;
+			decode($line, $content, "sasl");
+		};
+		if ($line =~ m/$IP/) {
+			$line =~ s/^[^=]*=//;
+			decode($line, $content, "ip");
+		};
+		if ($line =~ m/^$RECEIVED/) {
+			$line =~ s/^[^:]*:\s//;
+			decode($line, $content, "received");
+		};
+		if ($line =~ m/^$DATE/) {
+			$line =~ s/^[^,]*,\s//;
+			decode($line, $content, "date");
+		};
+		if ($line =~ m/^$XSENDER/) {
+			$line =~ s/^[^:]*:\s//;
+			decode($line, $content, "sender");
+		};
+		if ($line =~ m/^$FROM/) {
+			$line =~ s/^[^:]*:\s//;
+			decode($line, $content, "from");
+		};
+		if ($line =~ m/^$TO/) {
+			$line =~ s/^[^:]*:\s//;
+			decode($line, $content, "to");
+		};
+		if ($line =~ m/^$REPLYTO/) {
+			$line =~ s/^[^:]*:\s//;
+			decode($line, $content, "replyto");
+		};
+		if ($line =~ m/^$SUBJECT/) {
+			$line =~ s/^[^:]*:\s//;
+			decode($line, $content, "subject");
+		};
+	}
+}
+sub hashBodyInfo{
+	my $bodydata = shift;
+	$content = $bodydata || '';
+	$content =~ s/\R/ /g;							# replace linebreaks with space
+	$content =~ s/.*?$htmlstart(.*)$htmlend.*/$1/s;	# extract content between html-body-tags
+	$content =~ s|<.+?>||g;                         # html raus
+	$content =~ s/{.+}//sg;                         # webkit raus
+	$content = remove_strings($content, \@removes);	# spezielle tags raus
+	#$content =~ s/^ +//gm ;							# remove whitespaces at start of line
+	#$content =~ s/\n\s*/\n/g;						# remove empty lines
+	$content =~ s/\h+/ /g;                        	# replace multispaces with single space
+	$content =~ s/^\s+|\s+$//g;						# trim
+	#$mail{"body"}{"content"}{raw} = $content;
+	$content = clean_string("$content");
+	#$mail{"body"}{"content"}{cln} = $content;
+	#$mail{"body"}{"content"}{dec} = $content;
+
+	if ($bodydata =~ /(our message could not)/s) {
+		#print '-' x 80, "\n"; 
+		$mail{bounce} = 1;
+		hashHeaderInfo($bodydata, "body");
+		
+		decode($bodydata, "body");
+
+		# bsp: 10 alles nach X-Spamd-Bar: von interesse: Hallo * * * 馃獧 袙袗袦 袟袗效袠小袥袝袧袨 ...
+		#if ($bodydata =~ /X-Spamd-Bar:/s) {
+		#	$content = $bodydata;
+		#	$content =~ s/.*?X-Spamd-Bar:.*?\n(.*)(--.*--)\n(\*\*\*.*\*\*\*)/$1/s;
+		#	$content =~ s/\R//g;							# remove linebreaks
+		#	$content =~ s|<.+?>||g;                         # html raus
+		#	$content = remove_strings($content, \@removes);
+		#	$content =~ s/^ +//gm ;							# remove whitespaces at start of line
+		#	$mail{"body"}{"content"}{cln} = $content;
+		#}
+	}
+
+	#if ( !$bounce ){		# bsp 6 ist ein bounce -> nix valides zum zeigen
+		#print color("green"), "$content\n", color("reset");
+	#}
+	
+	### QP TEXT CONTENTS
+	#if ($bodydata =~ /Content-Type: (text\/plain|text\/html);(?=.{5,200}Content-Transfer-Encoding: quoted-printable)/s) {
+		#$qp = $bodydata;
+		#my $sum_qp = '';
+		#my $sum_qp_body = '';
+		#my $sum_qp_clean = '';
+		# problem bei 7, content dort gekürzt wegen komma als ende symbol (wäre evtl. besser?: --_=_swift) + 13, 16
+		#while ($qp =~ /Content-Type: (text\/plain|text\/html);((.*?\n?.*?){0,3})(Encoding: quoted-printable)((.*?\n?.*?)+)[^!]--[^>]/g){ # bsp: 26
+			#my $type = $1;
+			#my $qpen = $5;
+			#$sum_qp_body .= $qpen;
+			#$qpen = decode_qp($qpen);
+			#$sum_qp .= $qpen;
+			#$qpen = clean_string($qpen);
+			#$sum_qp_clean .= $qpen;
+			#decode("$5", "body", "qp");
+		#}
+		#$mail{"body"}{"qp"}{cln} = $sum_qp_clean;
+		#$mail{"body"}{"qp"}{dec} = $sum_qp;
+		#$mail{"body"}{"qp"}{raw} = $sum_qp_body;
+		#$mail{"body"}{"content"}{dec} = $sum_qp;
+	#}
+
+	### BASE64 TEXT CONTENTS			# (bsp: 6 23)
+	#if ($bodydata =~ /Content-Type: (text\/plain|text\/html);(?=.{5,200}Content-Transfer-Encoding: base64)/s) {
+		#$base64 = $bodydata;
+		#my $sum_b64 = '';
+		#my $sum_b64_body = '';
+		#my $sum_b64_clean = '';
+		#while ($base64 =~ /Content-Type: (text\/plain|text\/html);((.*?\n?.*?){0,3})(Encoding: base64)((.*?\n?.*?)+)=/g){
+			#my $type = $1;
+			#my $b64en = $5;
+			#$sum_b64_body .= $b64en;
+			#$b64en = MIME::Base64::decode($b64en);
+			#$sum_b64 .= $b64en;
+			#$b64en = clean_string($b64en);
+			#$sum_b64_clean .= $b64en;
+			#decode("$5", "body", "b64");	
+		#}
+		#$mail{"body"}{"b64"}{cln} = $sum_b64_clean;
+		#$mail{"body"}{"b64"}{dec} = $sum_b64;
+		#$mail{"body"}{"b64"}{raw} = $sum_b64_body;
+		#$mail{"body"}{"content"}{dec} = $sum_b64;
+	#}
+}
+
+### READ WHOLE FILE
+foreach my $line ( <STDIN> ) {
+    $PIPE .= $line;
+}
+### SEPARATE HEAD AND BODY
+my ($head, $bodydata) = split /\n\h*\n/, $PIPE, 2;
+### MAIL HEAD
+if ($head)
+{
+	hashHeaderInfo($head, "head");
+}
+### MAIL BODY
+if ($bodydata)
+{
+	hashBodyInfo($bodydata);
+}
+### OUTPUT PARSED INFO
+print Dumper(\%mail);
+if (exists $mail{head}){
+	#print color("white"), "date:\t\t"  . $mail{"head"}{"date"}{"dec"}    ."\n" , color("reset");
+	printentry($mail{"head"}, "date");
+	printentry($mail{"head"}, "ip");
+	printentry($mail{"head"}, "received");
+	printentry($mail{"head"}, "sasl");
+	printentry($mail{"head"}, "from");
+	printentry($mail{"head"}, "to");
+	printentry($mail{"head"}, "subject");
+	
+	if ($mail{bounce} == 1){
+		print color("red"), "THIS IS A BOUNCE :: Orig Message below ::", color("reset"), "\n";
+		printentry($mail{"body"}, "date");
+		printentry($mail{"body"}, "ip");
+		printentry($mail{"body"}, "received");
+		printentry($mail{"body"}, "sasl");
+		printentry($mail{"body"}, "from");
+		printentry($mail{"body"}, "to");
+		printentry($mail{"body"}, "subject");
+	}
+	
+	printentry($mail{"body"}, "content");
+}
+
+### END
+1
