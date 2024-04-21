@@ -3,4 +3,5 @@ tmp*
 wget-log*
 test.pl
 tmp.pl
+backup.txt
 
