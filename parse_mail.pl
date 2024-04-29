@@ -144,17 +144,17 @@ sub decodeGuess{
 		
 		my $typecode = "";
 		if ($input =~ /${$ContentType}((.*?\n?.*?){0,3})${$ContentEnc}/g){		# 1
-			print color("red"),"type first!", color("reset"), "\n";
+			#print color("red"),"type first!", color("reset"), "\n";
 			$order = "TE";
 		}elsif ($input =~ /${$ContentEnc}((.*?\n?.*?){0,3})${$ContentType}/g){	# 54
-			print color("red"),"enc first!", color("reset"), "\n";
+			#print color("red"),"enc first!", color("reset"), "\n";
 			$order = "ET";
 		}elsif ($input =~ /${$ContentType}/g){									# 40
-			print color("red"),"type only!", color("reset"), "\n";
+			#print color("red"),"type only!", color("reset"), "\n";
 			$order = "T";
 			$enc = "none";
 		}elsif ($input =~ /${$ContentEnc}/g){
-			print color("red"),"enc only!", color("reset"), "\n";
+			#print color("red"),"enc only!", color("reset"), "\n";
 			$order = "E";
 			$type = "none";
 			$chars = "none";
@@ -299,34 +299,35 @@ my $iter = 0;
 $content = "";
 sub printMail{
 	my $input = shift;
+	
+	#handle print body always first
+	if (exists($input->{"body"})){
+		push(@paths, "body");
+		printMail($input->{"body"});
+		pop(@paths);
+	}
+	
 	while(my($k, $v) = each %{$input}) {
-		if (exists($input->{$k})){
-		
+		if (exists($input->{$k}) && ($k ne "body")){
 			if ($k =~ /(raw|enc|dec|cln)/){
 				printLine($input, "$k");
 			}else{
-				push(@paths, $k);
-				printMail($input->{"$k"});
-				pop(@paths);
+				# handle numbered
+				if (exists($input->{"$iter"})){
+					push(@paths, $iter);
+					printMail($input->{"$iter"});
+					$iter++;
+					if (!exists($input->{"$iter"})){
+						$iter = 0;
+					}
+					pop(@paths);
+				}else{
+					push(@paths, $k);
+					#printMail($input->{"$iter"});
+					printMail(\%{$v});
+					pop(@paths);
+				}
 			}
-			
-			#printMail($input->{"$k"});
-			#if (exists($input->{"$iter"})){
-			#	#push(@paths, $iter);
-			#	printMail($input->{"$iter"});
-			#	$iter++;
-			#}elsif (exists($input->{"raw"})){
-			#	printLine($input, "raw");
-			#}else{
-			#	#printLine($input, $k);
-			#	if ($k ne "raw" && $k ne "cln" && $k ne "dec" && $k ne "enc"){
-			#		printMail(\%{$v});
-			#	#	$iter = 0;
-			#	}else{
-			#		#$content = pop(@paths);
-			#		#print color("yellow"), "removed: ", color("green"), $content, color("reset"), "\n";	# <<==
-			#	}
-			#}
 		}
 	}
 }
@@ -352,14 +353,13 @@ sub printLine{
 		
 		if ($temp eq $k){
 			$spaces = "\t\t\t";
-			if (length("@paths $temp: ") > 7) {$spaces = "\t\t"}
-			if (length("@paths $temp: ") > 14) {$spaces = "\t"}
+			if ($temp eq "raw") { $temp = ""; }
+			if (length("@paths $temp ") > 7) {$spaces = "\t\t"}
+			if (length("@paths $temp ") > 14) {$spaces = "\t"}
 			#binmode(STDOUT, ":utf8");		# vs 14: 绿茶网址	-> no warning utf8
-			print color("yellow"), "@paths $k: ", color("reset"), $spaces.$content . color("reset") ."\n";	# <<========
-		}		
-					
+			print color("yellow"), "@paths $temp ", color("reset"), $spaces.$content . color("reset") ."\n";	# <<========
+		}					
 		#print color("yellow"), "@paths $temp: ", color("reset"), "$content\n", color("reset");
-
 	}	
 }
 sub hashHeaderInfo{
@@ -443,9 +443,9 @@ foreach my $line ( <STDIN> ) {
 ### HASH WHOLE CONVERSATION
 hashMail($PIPE);
 ### OUTPUT PARSED INFO
-print color("red"), "======================= :: DEBUG HASH :: =======================", color("reset"), "\n";
-print Dumper(\%mail);
-print color("red"), "======================= :: MAIL PARSE ATTEMPT :: =======================", color("reset"), "\n";
+#print color("red"), "======================= :: DEBUG HASH :: =======================", color("reset"), "\n";
+#print Dumper(\%mail);
+#print color("red"), "======================= :: MAIL PARSE ATTEMPT :: =======================", color("reset"), "\n";
 if (exists $mail{origin}){
 	printMail($mail{"origin"});
 }
