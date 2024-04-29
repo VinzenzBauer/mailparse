@@ -7,7 +7,7 @@ use MIME::QuotedPrint;
 use Data::Dumper qw(Dumper);
 use HTML::FormatText 2;								#https://docstore.mik.ua/orelly/perl4/cook/ch20_07.htm
 use Encode qw(encode decode);
-no warnings 'utf8';
+#no warnings 'utf8';
 
 ### VARS
 my $M0 = "named_attribute: sasl_username=.*";  		#named_attribute: sasl_username=m05ad8d7
@@ -253,7 +253,7 @@ sub clean_string{
 	$input =~ s/\n\s*/\n/g;							# remove empty lines
     return $input;
 }
-sub clean_body{										# extract body and clean of html tags
+sub clean_body{
 	my $input = shift || '';
 	$input =~ s/$M0//g;
 	$input =~ s/$IP//g;
@@ -447,6 +447,8 @@ sub hashMail{
 			#hashBodyInfo($body, $key);
 			decodeGuess($body, $key, "body");
 		}
+	}else{
+		print color("red"), "body empty, pls forward mail-code to miau\@miaut.de", color("reset"), "\n";
 	}
 }
 
