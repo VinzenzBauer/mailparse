@@ -129,6 +129,9 @@ sub decodeGuess{
 				#$mail{"$key"}{"$key2"}{raw} .=  clean_string($line);		
 			}else{
 				$mail{"$key"}{"$key2"}{raw} .=  $line;	# bsp 1, da keine encodings im header
+				if (clean_string($mail{"$key"}{"$key2"}{raw}) ne $mail{"$key"}{"$key2"}{raw}){
+					$mail{"$key"}{"$key2"}{cln} = clean_string($mail{"$key"}{"$key2"}{raw});
+				}
 			}
 		} 
 	}
@@ -307,10 +310,19 @@ sub printMail{
 		pop(@paths);
 	}
 	
+	#handle print cln and raw always first
+	if ( exists($input->{"cln"}) ){
+		printLine($input, "cln");
+	}elsif ( exists($input->{"raw"}) ){
+		printLine($input, "raw");
+	}
+	
 	while(my($k, $v) = each %{$input}) {
 		if (exists($input->{$k}) && ($k ne "body")){
 			if ($k =~ /(raw|enc|dec|cln)/){
-				printLine($input, "$k");
+				if ($k !~ /(cln|raw)/){	# already handled above while beeing print first
+					printLine($input, "$k");
+				}
 			}else{
 				# handle numbered
 				if (exists($input->{"$iter"})){
@@ -352,12 +364,13 @@ sub printLine{
 		$content = $input->{$k};
 		
 		if ($temp eq $k){
-			$spaces = "\t\t\t";
-			if ($temp eq "raw") { $temp = ""; }
-			if (length("@paths $temp ") > 7) {$spaces = "\t\t"}
-			if (length("@paths $temp ") > 14) {$spaces = "\t"}
+			$spaces = "\t\t\t\t";
+			#if ($temp eq "raw") { $temp = ""; }
+			if (length("@paths $temp: ") > 7) {$spaces = "\t\t\t"}
+			if (length("@paths $temp: ") > 14) {$spaces = "\t\t"}
+			if (length("@paths $temp: ") > 21) {$spaces = "\t"}
 			#binmode(STDOUT, ":utf8");		# vs 14: 绿茶网址	-> no warning utf8
-			print color("yellow"), "@paths $temp ", color("reset"), $spaces.$content . color("reset") ."\n";	# <<========
+			print color("yellow"), "@paths $temp: ", color("reset"), $spaces.$content . color("reset") ."\n";	# <<========
 		}					
 		#print color("yellow"), "@paths $temp: ", color("reset"), "$content\n", color("reset");
 	}	
