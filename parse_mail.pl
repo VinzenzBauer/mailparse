@@ -429,12 +429,8 @@ sub hashMail{
 	my $BOUNCE = "Content-Description: Undelivered Message"; # bsp 6 23
 	
 	## SEPARATE HEAD AND BODY
-	#my ($head, $body) = split /\n\h*\n/, $input, 2;
-	my ($head, $body) = split/\R+\s*\R+/, $input, 2;
-	
-	print color("red"), "some debugging because of errors:", color("reset"), "\n";
-	print Dumper($head);
-	print Dumper($body);
+	my ($head, $body) = split /\n\h*\n/, $input, 2;
+	#my ($head, $body) = split/\R+\s*\R+/, $input, 2;
 	
 	## MAIL HEAD
 	if ($head)
@@ -453,7 +449,13 @@ sub hashMail{
 			decodeGuess($body, $key, "body");
 		}
 	}else{
-		print color("red"), "body empty, pls forward mail-code to ______", color("reset"), "\n";
+		print color("red"), "PARSING MAIL-BODY FAILED, please forward mailcode to miau\@miaut.de", color("reset"), "\n";
+		print color("red"), "Mailcode is:", color("reset"), "\n";
+		print Dumper($input);
+		print color("red"), "read Head was:", color("reset"), "\n";
+		print Dumper($head);
+		print color("red"), "read Body was:", color("reset"), "\n";
+		print Dumper($body);
 	}
 }
 
@@ -464,8 +466,8 @@ foreach my $line ( <STDIN> ) {
 ### HASH WHOLE CONVERSATION
 hashMail($PIPE);
 ### OUTPUT PARSED INFO
-print color("red"), "======================= :: DEBUG HASH :: =======================", color("reset"), "\n";
-print Dumper(\%mail);
+#print color("red"), "======================= :: DEBUG HASH :: =======================", color("reset"), "\n";
+#print Dumper(\%mail);
 print color("green"), "======================= :: MAIL PARSE ATTEMPT BELOW :: =======================", color("reset"), "\n";
 if (exists $mail{origin}){
 	printMail($mail{"origin"});
