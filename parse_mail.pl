@@ -367,8 +367,9 @@ sub printLine{
 			$spaces = "\t\t\t\t";
 			#if ($temp eq "raw") { $temp = ""; }
 			if (length("@paths $temp: ") > 7) {$spaces = "\t\t\t"}
-			if (length("@paths $temp: ") > 14) {$spaces = "\t\t"}
-			if (length("@paths $temp: ") > 21) {$spaces = "\t"}
+			if (length("@paths $temp: ") > 15) {$spaces = "\t\t"}
+			if (length("@paths $temp: ") > 23) {$spaces = "\t"}		# bsp 28
+			if (length("@paths $temp: ") > 31) {$spaces = ""}		# bsp 20
 			#binmode(STDOUT, ":utf8");		# vs 14: 绿茶网址	-> no warning utf8
 			print color("yellow"), "@paths $temp: ", color("reset"), $spaces.$content . color("reset") ."\n";	# <<========
 		}					
@@ -458,13 +459,13 @@ hashMail($PIPE);
 ### OUTPUT PARSED INFO
 #print color("red"), "======================= :: DEBUG HASH :: =======================", color("reset"), "\n";
 #print Dumper(\%mail);
-#print color("red"), "======================= :: MAIL PARSE ATTEMPT :: =======================", color("reset"), "\n";
+print color("green"), "======================= :: MAIL PARSE ATTEMPT BELOW :: =======================", color("reset"), "\n";
 if (exists $mail{origin}){
 	printMail($mail{"origin"});
 }
 if (exists $mail{bounce}){
 	## HEADER INFO
-	print color("red"), "======================= :: THIS IS A BOUNCE :: Orig Message below :: =======================", color("reset"), "\n";
+	print color("red"), "======================= :: THIS IS A BOUNCE :: Orig Message BELOW :: =======================", color("reset"), "\n";
 	#push(@paths, "bounce");
 	printMail($mail{"bounce"});
 }
