@@ -429,7 +429,8 @@ sub hashMail{
 	my $BOUNCE = "Content-Description: Undelivered Message"; # bsp 6 23
 	
 	## SEPARATE HEAD AND BODY
-	my ($head, $body) = split /\n\h*\n/, $input, 2;
+	#my ($head, $body) = split /\n\h*\n/, $input, 2;
+	my ($head, $body) = split/\R+\s*\R+/, $input, 2;
 	
 	print color("red"), "some debugging because of errors:", color("reset"), "\n";
 	print Dumper($head);
