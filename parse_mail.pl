@@ -431,6 +431,10 @@ sub hashMail{
 	## SEPARATE HEAD AND BODY
 	my ($head, $body) = split /\n\h*\n/, $input, 2;
 	
+	print color("red"), "some debugging because of errors:", color("reset"), "\n";
+	print Dumper($head);
+	print Dumper($body);
+	
 	## MAIL HEAD
 	if ($head)
 	{
@@ -448,7 +452,7 @@ sub hashMail{
 			decodeGuess($body, $key, "body");
 		}
 	}else{
-		print color("red"), "body empty, pls forward mail-code to miau\@miaut.de", color("reset"), "\n";
+		print color("red"), "body empty, pls forward mail-code to ______", color("reset"), "\n";
 	}
 }
 
