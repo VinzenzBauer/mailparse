@@ -7,7 +7,7 @@ use MIME::QuotedPrint;
 use Data::Dumper qw(Dumper);
 use HTML::FormatText 2;								#https://docstore.mik.ua/orelly/perl4/cook/ch20_07.htm
 use Encode qw(encode decode);
-#no warnings 'utf8';
+no warnings 'utf8';
 
 ### VARS
 my $M0 = "named_attribute: sasl_username=.*";  		#named_attribute: sasl_username=m05ad8d7
@@ -429,8 +429,9 @@ sub hashMail{
 	my $BOUNCE = "Content-Description: Undelivered Message"; # bsp 6 23
 	
 	## SEPARATE HEAD AND BODY
-	my ($head, $body) = split /\n\h*\n/, $input, 2;
+	#my ($head, $body) = split /\n\h*\n/, $input, 2;
 	#my ($head, $body) = split/\R+\s*\R+/, $input, 2;
+	my ($head, $body) = split /[\n]{2,}/, $input, 2;
 	
 	## MAIL HEAD
 	if ($head)
