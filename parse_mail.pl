@@ -446,8 +446,8 @@ sub hashMail{
 	
 	## SEPARATE HEAD AND BODY
 	#my ($head, $body) = split /\n\h*\n/, $input, 2;
-	#my ($head, $body) = split/\R+\s*\R+/, $input, 2;
-	my ($head, $body) = split /[\n]{2,}/, $input, 2;
+	my ($head, $body) = split/\R+\s*\R+/, $input, 2; # 76 in live example
+	#my ($head, $body) = split /[\n]{2,}/, $input, 2;
 	
 	## MAIL HEAD
 	if ($head)
@@ -466,7 +466,7 @@ sub hashMail{
 		}
 	}else{
 		print color("red"), "FAILED PARSING MAIL-BODY, please forward mailcode to miau\@miaut.de", color("reset"), "\n";
-		($head, $body) = split /[\n]{2,}/, $input, 2;
+		($head, $body) = split /\n\h*\n/, $input, 2;
 		if ($body)
 		{
 			print color("red"), "|split1 works|", color("reset"), "\n";
@@ -475,6 +475,11 @@ sub hashMail{
 		if ($body)
 		{
 			print color("red"), "|split2 works|", color("reset"), "\n";
+		}
+		($head, $body) = split /[\n]{2,}/, $input, 2;
+		if ($body)
+		{
+			print color("red"), "|split3 works|", color("reset"), "\n";
 		}
 		print color("red"), "==================\nMailcode is:", color("reset"), "\n";
 		print $input;
