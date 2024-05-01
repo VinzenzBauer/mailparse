@@ -162,7 +162,7 @@ sub decodeGuess{
 			$type = "none";
 			$chars = "none";
 		}else{
-			#print color("red"),"raw only!", color("reset"), "\n";
+			print color("red"),"raw only!", color("reset"), "\n";
 		};
 
 		my @sA = split (/$bodysplit/, $input);
