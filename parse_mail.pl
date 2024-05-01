@@ -464,7 +464,7 @@ sub hashMail{
 			$body = $head."\n\n".$body;
 			decodeGuess($body, $key, "body");
 		}
-	}else{
+	}else{	# ERROR in body > try to figure out which split could work
 		print color("red"), "FAILED PARSING MAIL-BODY, please forward mailcode to miau\@miaut.de", color("reset"), "\n";
 		($head, $body) = split /\n\h*\n/, $input, 2;
 		if ($body)
@@ -494,7 +494,7 @@ foreach my $line ( <STDIN> ) {
 hashMail($PIPE);
 ### OUTPUT PARSED INFO
 #print color("red"), "======================= :: DEBUG HASH :: =======================", color("reset"), "\n";
-#print Dumper(\%mail);
+print Dumper(\%mail);
 print color("green"), "======================= :: MAIL PARSE ATTEMPT BELOW :: =======================", color("reset"), "\n";
 if (exists $mail{origin}){
 	printMail($mail{"origin"});
