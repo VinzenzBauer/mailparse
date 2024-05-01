@@ -301,6 +301,7 @@ sub clean_body{
 	$input =~ s/List-Unsubscribe:.*//g;				# 41		# List-Unsubscribe: <mailto:?subject=Unsubscribe>
 	$input =~ s/.*format=flowed.*//g;				# 54
 	$input =~ s/Content-Disposition: .*//g;			# 75
+	$input =~ s/X-Spf-.{2,10}: .*//g;				# 77
 	
 	return $input;
 }
@@ -464,7 +465,7 @@ sub hashMail{
 			$body = $head."\n\n".$body;
 			decodeGuess($body, $key, "body");
 		}
-	}else{	# ERROR in body > try to figure out which split could work
+	}else{	# ERROR in body > try to figure out which split could work # only a temporary dirty solution
 		print color("red"), "FAILED PARSING MAIL-BODY, please forward mailcode to miau\@miaut.de", color("reset"), "\n";
 		($head, $body) = split /\n\h*\n/, $input, 2;
 		if ($body)
@@ -493,8 +494,8 @@ foreach my $line ( <STDIN> ) {
 ### HASH WHOLE CONVERSATION
 hashMail($PIPE);
 ### OUTPUT PARSED INFO
-#print color("red"), "======================= :: DEBUG HASH :: =======================", color("reset"), "\n";
-#print Dumper(\%mail);
+print color("red"), "======================= :: DEBUG HASH :: =======================", color("reset"), "\n";
+print Dumper(\%mail);
 print color("green"), "======================= :: MAIL PARSE ATTEMPT BELOW :: =======================", color("reset"), "\n";
 if (exists $mail{origin}){
 	printMail($mail{"origin"});
