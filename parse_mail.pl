@@ -494,7 +494,7 @@ foreach my $line ( <STDIN> ) {
 hashMail($PIPE);
 ### OUTPUT PARSED INFO
 #print color("red"), "======================= :: DEBUG HASH :: =======================", color("reset"), "\n";
-print Dumper(\%mail);
+#print Dumper(\%mail);
 print color("green"), "======================= :: MAIL PARSE ATTEMPT BELOW :: =======================", color("reset"), "\n";
 if (exists $mail{origin}){
 	printMail($mail{"origin"});
