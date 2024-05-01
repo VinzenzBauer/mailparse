@@ -219,8 +219,15 @@ sub decodeGuess{
 					if ($enc eq "b64"){
 						$content = MIME::Base64::decode($content);
 					}
-					if ($type eq "html" || $type eq "plain") {		# plain kann auch html enthalten: bsp 37			
-						$content = HTML::FormatText->format_string(decode_utf8 $content);
+					if ($type eq "html" || $type eq "plain") {		# plain kann auch html enthalten: bsp 37	
+						my $temp = $content;
+						eval{
+							$temp = decode_utf8 $temp;
+						};
+						if ( $@ ) {
+							print color("red"), "warning: youv made me eat non utf8 !", color("reset"), "\n";
+						}
+						$content = HTML::FormatText->format_string($temp);
 					}
 					if ($content ne $temp){
 						$mail{"$key"}{"$key2"}{"$cont"}{"$type.$chars.$enc"}{dec} = $content;
