@@ -283,6 +283,8 @@ sub clean_body{
 	$input =~ s/X-MSMail-Priority:.*//g;			# 41		# X-MSMail-Priority: High
 	$input =~ s/X-Dmarc-Test:.*//g;					# 52
 	$input =~ s/named_attribute: .*//g;				# 52
+	$input =~ s/original_recipient: .*//g;			# 73
+	$input =~ s/recipient: .*//g;					# 73
 	$input =~ s/Message-Id:.*//g;
 	$input =~ s/List-Unsubscribe:.*//g;				# 41		# List-Unsubscribe: <mailto:?subject=Unsubscribe>
 
