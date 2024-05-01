@@ -147,17 +147,17 @@ sub decodeGuess{
 		
 		my $typecode = "";
 		if ($input =~ /${$ContentType}((.*?\n?.*?){0,3})${$ContentEnc}/g){		# 1
-			#print color("red"),"type first!", color("reset"), "\n";
+			print color("red"),"type first!", color("reset"), "\n";
 			$order = "TE";
 		}elsif ($input =~ /${$ContentEnc}((.*?\n?.*?){0,3})${$ContentType}/g){	# 54
-			#print color("red"),"enc first!", color("reset"), "\n";
+			print color("red"),"enc first!", color("reset"), "\n";
 			$order = "ET";
 		}elsif ($input =~ /${$ContentType}/g){									# 40
-			#print color("red"),"type only!", color("reset"), "\n";
+			print color("red"),"type only!", color("reset"), "\n";
 			$order = "T";
 			$enc = "none";
 		}elsif ($input =~ /${$ContentEnc}/g){
-			#print color("red"),"enc only!", color("reset"), "\n";
+			print color("red"),"enc only!", color("reset"), "\n";
 			$order = "E";
 			$type = "none";
 			$chars = "none";
@@ -166,9 +166,9 @@ sub decodeGuess{
 		};
 
 		my @sA = split (/$bodysplit/, $input);
-		foreach my $m (@sA) {
-			print color("yellow"),"array: ", color("green"), $m, color("reset"), "\n";
-		}
+		#foreach my $m (@sA) {
+		#	print color("yellow"),"array: ", color("green"), $m, color("reset"), "\n";
+		#}
 
 		$inc = 0;
 		my $cont = 0;
