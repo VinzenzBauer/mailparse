@@ -462,7 +462,7 @@ sub hashMail{
 			decodeGuess($body, $key, "body");
 		}
 	}else{
-		print color("red"), "FAILED PARSING MAIL-BODY, please forward mailcode to miau\@miaut.de", color("reset"), "\n";
+		print color("red"), "FAILED PARSING MAIL-BODY!, please forward mailcode to miau\@miaut.de", color("reset"), "\n";
 		print color("red"), "Mailcode is:", color("reset"), "\n";
 		print $input;
 	}
