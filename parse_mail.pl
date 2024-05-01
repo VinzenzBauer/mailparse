@@ -166,9 +166,9 @@ sub decodeGuess{
 		};
 
 		my @sA = split (/$bodysplit/, $input);
-		#foreach my $m (@sA) {
-		#	print color("yellow"),"array: ", color("green"), $m, color("reset"), "\n";
-		#}
+		foreach my $m (@sA) {
+			print color("yellow"),"array: ", color("green"), $m, color("reset"), "\n";
+		}
 
 		$inc = 0;
 		my $cont = 0;
@@ -296,7 +296,8 @@ sub clean_body{
 	$input =~ s/Message-Id:.*//g;
 	$input =~ s/List-Unsubscribe:.*//g;				# 41		# List-Unsubscribe: <mailto:?subject=Unsubscribe>
 	$input =~ s/.*format=flowed.*//g;				# 54
-
+	$input =~ s/Content-Disposition: .*//g;			# 75
+	
 	return $input;
 }
 sub remove_strings {
