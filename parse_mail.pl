@@ -469,17 +469,17 @@ sub hashMail{
 		($head, $body) = split /\n\h*\n/, $input, 2;
 		if ($body)
 		{
-			print color("red"), "|split1 works|", color("reset"), "\n";
+			print color("red"), "|split1 nhn works|", color("reset"), "\n";
 		}
 		($head, $body) = split/\R+\s*\R+/, $input, 2;
 		if ($body)
 		{
-			print color("red"), "|split2 works|", color("reset"), "\n";
+			print color("red"), "|split2 rsr works|", color("reset"), "\n";
 		}
 		($head, $body) = split /[\n]{2,}/, $input, 2;
 		if ($body)
 		{
-			print color("red"), "|split3 works|", color("reset"), "\n";
+			print color("red"), "|split3 n2 works|", color("reset"), "\n";
 		}
 		print color("red"), "==================\nMailcode is:", color("reset"), "\n";
 		print $input;
