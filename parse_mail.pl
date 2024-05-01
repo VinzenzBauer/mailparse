@@ -27,10 +27,8 @@ my $base64 = "";
 my $qp = "";
 my $content = "";
 my $spaces = '';
-my $order = "none";
 
 my %mail;
-my @sA;
 
 #local $SIG{__WARN__} = sub {
 #	my $message = shift;
@@ -48,6 +46,7 @@ sub decodeGuess{
 	my $sum_raw = '';
 	my $sum_dec = '';
 	my $dec = $input;
+	my $order = "none";
 	
 	my $inc = 0;
 	my @matches;
@@ -162,10 +161,11 @@ sub decodeGuess{
 			$type = "none";
 			$chars = "none";
 		}else{
-			print color("red"),"raw only!", color("reset"), "\n";
+			#print color("red"),"raw only!", color("reset"), "\n";
+			$order = "R";
 		};
 
-		@sA = split (/$bodysplit/, $input);
+		my @sA = split (/${$bodysplit}/, $input);
 		#foreach my $m (@sA) {
 		#	print color("yellow"),"array: ", color("green"), $m, color("reset"), "\n";
 		#}
@@ -252,6 +252,10 @@ sub decodeGuess{
 			# all good
 		}else{
 			print color("red"), "not parsable, pls forward mail-code to miau\@miaut.de", color("reset"), "\n";
+			print color("red"), "==================\nSplit was:", color("reset"), "\n";
+			foreach my $m (@sA) {
+				print color("yellow"),"array: ", color("green"), $m, color("reset"), "\n";
+			}
 		}
 	}
 }
@@ -458,14 +462,19 @@ sub hashMail{
 			hashMail($body, "bounce");
 		}else{
 			$body = $head."\n\n".$body;
-			#hashBodyInfo($body, $key);
 			decodeGuess($body, $key, "body");
 		}
 	}else{
-		print color("red"), "FAILED PARSING MAIL-BODY ($order), please forward mailcode to miau\@miaut.de", color("reset"), "\n";
-		print color("red"), "==================\nSplit was:", color("reset"), "\n";
-		foreach my $m (@sA) {
-			print color("yellow"),"array: ", color("green"), $m, color("reset"), "\n";
+		print color("red"), "FAILED PARSING MAIL-BODY, please forward mailcode to miau\@miaut.de", color("reset"), "\n";
+		($head, $body) = split /[\n]{2,}/, $input, 2;
+		if ($body)
+		{
+			print color("red"), "|split1 works|", color("reset"), "\n";
+		}
+		($head, $body) = split/\R+\s*\R+/, $input, 2;
+		if ($body)
+		{
+			print color("red"), "|split2 works|", color("reset"), "\n";
 		}
 		print color("red"), "==================\nMailcode is:", color("reset"), "\n";
 		print $input;
