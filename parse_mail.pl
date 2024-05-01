@@ -5,18 +5,18 @@ use MIME::Base64;
 use Term::ANSIColor;
 use MIME::QuotedPrint;
 use Data::Dumper qw(Dumper);
-use HTML::FormatText 2;								#https://docstore.mik.ua/orelly/perl4/cook/ch20_07.htm
-use Encode qw(encode decode);
+use HTML::FormatText 2;								# https://docstore.mik.ua/orelly/perl4/cook/ch20_07.htm
+use Encode qw(encode decode decode_utf8);			# https://eli.thegreenplace.net/2007/07/20/parsing-of-undecoded-utf-8-will-give-garbage-when-decoding-entities
 no warnings 'utf8';
 
 ### VARS
-my $M0 = "named_attribute: sasl_username=.*";  		#named_attribute: sasl_username=m05ad8d7
-my $IP = "named_attribute: client_address=.*";   	#client_address=209....197
-my $DATE = "Date:.*[0-9]{2}:[0-9]{2}:[0-9]{2}.*";	#Date: Wed, 20 Mar 2024 16:31:40 +0000 (UTC)
-my $FROM = "From:.*";								#From: TPMS-SAS-Live <tpms-sas-outbox.de>
-my $TO = "To:.*";                           		#To: "Messing Ragert, Ingrid  10162" <10162@sas.dk>
-my $SUBJECT = "Subject:.*";                    		#Subject: Event report Filed
-my $XSENDER = "X-SenderIP:.*";						#X-SenderIP: 84.....120 bsp 21
+my $M0 = "named_attribute: sasl_username=.*";  		# named_attribute: sasl_username=m05ad8d7
+my $IP = "named_attribute: client_address=.*";   	# client_address=209....197
+my $DATE = "Date:.*[0-9]{2}:[0-9]{2}:[0-9]{2}.*";	# Date: Wed, 20 Mar 2024 16:31:40 +0000 (UTC)
+my $FROM = "From:.*";								# From: TPMS-SAS-Live <tpms-sas-outbox.de>
+my $TO = "To:.*";                           		# To: "Messing Ragert, Ingrid  10162" <10162@sas.dk>
+my $SUBJECT = "Subject:.*";                    		# Subject: Event report Filed
+my $XSENDER = "X-SenderIP:.*";						# X-SenderIP: 84.....120 bsp 21
 my $REPLYTO = "Reply-To:.*";
 my $RECEIVED = "Received:.*";						# Received: from ....ru (unknown [147....106]) bsp 23	
 my $XPAMD = "X-Spamd-Bar:.*";						# X-Spamd-Bar: +++ # 40
@@ -220,7 +220,7 @@ sub decodeGuess{
 						$content = MIME::Base64::decode($content);
 					}
 					if ($type eq "html" || $type eq "plain") {		# plain kann auch html enthalten: bsp 37			
-						$content = HTML::FormatText->format_string($content);
+						$content = HTML::FormatText->format_string(decode_utf8 $content);
 					}
 					if ($content ne $temp){
 						$mail{"$key"}{"$key2"}{"$cont"}{"$type.$chars.$enc"}{dec} = $content;
@@ -271,7 +271,7 @@ sub clean_body{
 	$input =~ s/\*\*\*\s?MESSAGE.*\*\*\*\n//g;		# 40 21
 	$input =~ s/Message-ID:.*\n//g;					# 18
 	$input =~ s/--.*?\.kasserver\.com--.*//g;		# 21
-	$input =~ s/--.*?=_.*?--//g;					# 4			--b1=_5rL5sE1gxdXRyxPfwuXw0g0LmvTlwggj9CiWdPjZk--
+	$input =~ s/--.*?=_.*?--//g;					# 4			# --b1=_5rL5sE1gxdXRyxPfwuXw0g0LmvTlwggj9CiWdPjZk--
 	$input =~ s/--_=_.*?_=_.*\n//g;					# 26		# --_=_swift_v4_1711953407_a6d0eab157ec92d9_=_--
 	$input =~ s/--[a-zA-Z0-9=_]*(--)?\n//g;			# 27 33 35	# --a8e4ad06f2361c1e5df79aface0b32c8254c--
 	$input =~ s/--Apple-.*(--)?\n//g;				# 29		# --Apple-Mail-EAFC032E-8C51-4A17-82BC-BB3B42F3BD85
