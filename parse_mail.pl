@@ -22,15 +22,11 @@ my $RECEIVED = "Received:.*";						# Received: from ....ru (unknown [147....106]
 my $XPAMD = "X-Spamd-Bar:.*";						# X-Spamd-Bar: +++ # 40
 my $XPAM = "X-Spam:.*";								# X-Spam: Yes # 41
 		
-#my @removes = qw( &nbsp; &copy; &quot; &zwnj; \x{200c} \x{34f} );		# bsp: 1 43
-#my @removes = qw( \x{34f} \x{a9} \x{200c} &zwnj; &nbsp; &nb= &nb=.sp &nbs= nbsp; &zw=.nj; =.47; 47; =20 =0A &zwn= zwnj;);
-
 my $PIPE = "";
 my $base64 = "";
 my $qp = "";
 my $content = "";
 my $spaces = '';
-#my $index = 0;
 
 my %mail;
 my $blocks;
@@ -39,8 +35,9 @@ my $blocks;
 #	my $message = shift;
 #	print color("yellow"), "warning! : $message", color("reset"), "\n";
 #};
+
+#my @removals = qw( &nbsp; &copy; &quot; &zwnj; \x{200c} \x{34f} );		# bsp: 1 43
 							
-### super bsp: 39 für spam
 ### SUBROUTINES
 sub decodeGuess{
 	my $input = shift || '';
@@ -466,11 +463,11 @@ sub hashMail{
 	}else{
 		print color("red"), "PARSING MAIL-BODY FAILED, please forward mailcode to miau\@miaut.de", color("reset"), "\n";
 		print color("red"), "Mailcode is:", color("reset"), "\n";
-		print Dumper($input);
-		print color("red"), "read Head was:", color("reset"), "\n";
-		print Dumper($head);
-		print color("red"), "read Body was:", color("reset"), "\n";
-		print Dumper($body);
+		print $input
+		#print color("red"), "read Head was:", color("reset"), "\n";
+		#print Dumper($head);
+		#print color("red"), "read Body was:", color("reset"), "\n";
+		#print Dumper($body);
 	}
 }
 
