@@ -27,9 +27,10 @@ my $base64 = "";
 my $qp = "";
 my $content = "";
 my $spaces = '';
+my $order = "none";
 
 my %mail;
-my $blocks;
+my @sA;
 
 #local $SIG{__WARN__} = sub {
 #	my $message = shift;
@@ -65,7 +66,6 @@ sub decodeGuess{
 	my $bodysplit		= qr/([cC]ontent-[tT].{3,20}: .*?\n)/;						# 1	
 	my $ContentType		= qr/[cC]ontent-[tT]ype: (?!multi)/;						# 32
 	my $ContentEnc		= qr/[cC]ontent-?[tT]ransfer-?[eE]ncoding: /;
-	my $order			= "none";
 
 	########## HEADER ########### 
 	if ($key2 ne "body"){
@@ -147,17 +147,17 @@ sub decodeGuess{
 		
 		my $typecode = "";
 		if ($input =~ /${$ContentType}((.*?\n?.*?){0,3})${$ContentEnc}/g){		# 1
-			print color("red"),"type first!", color("reset"), "\n";
+			#print color("red"),"type first!", color("reset"), "\n";
 			$order = "TE";
 		}elsif ($input =~ /${$ContentEnc}((.*?\n?.*?){0,3})${$ContentType}/g){	# 54
-			print color("red"),"enc first!", color("reset"), "\n";
+			#print color("red"),"enc first!", color("reset"), "\n";
 			$order = "ET";
 		}elsif ($input =~ /${$ContentType}/g){									# 40
-			print color("red"),"type only!", color("reset"), "\n";
+			#print color("red"),"type only!", color("reset"), "\n";
 			$order = "T";
 			$enc = "none";
 		}elsif ($input =~ /${$ContentEnc}/g){
-			print color("red"),"enc only!", color("reset"), "\n";
+			#print color("red"),"enc only!", color("reset"), "\n";
 			$order = "E";
 			$type = "none";
 			$chars = "none";
@@ -165,7 +165,7 @@ sub decodeGuess{
 			print color("red"),"raw only!", color("reset"), "\n";
 		};
 
-		my @sA = split (/$bodysplit/, $input);
+		@sA = split (/$bodysplit/, $input);
 		#foreach my $m (@sA) {
 		#	print color("yellow"),"array: ", color("green"), $m, color("reset"), "\n";
 		#}
@@ -462,8 +462,12 @@ sub hashMail{
 			decodeGuess($body, $key, "body");
 		}
 	}else{
-		print color("red"), "FAILED PARSING MAIL-BODY!, please forward mailcode to miau\@miaut.de", color("reset"), "\n";
-		print color("red"), "Mailcode is:", color("reset"), "\n";
+		print color("red"), "FAILED PARSING MAIL-BODY ($order), please forward mailcode to miau\@miaut.de", color("reset"), "\n";
+		print color("red"), "==================\nSplit was:", color("reset"), "\n";
+		foreach my $m (@sA) {
+			print color("yellow"),"array: ", color("green"), $m, color("reset"), "\n";
+		}
+		print color("red"), "==================\nMailcode is:", color("reset"), "\n";
 		print $input;
 	}
 }
