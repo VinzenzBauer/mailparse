@@ -35,6 +35,11 @@ my $spaces = '';
 my %mail;
 my $blocks;
 
+#local $SIG{__WARN__} = sub {
+#	my $message = shift;
+#	print color("yellow"), "warning! : $message", color("reset"), "\n";
+#};
+							
 ### super bsp: 39 für spam
 ### SUBROUTINES
 sub decodeGuess{
@@ -138,8 +143,6 @@ sub decodeGuess{
 	
 	########## BODY ########### 
 	if ($key2 eq "body"){
-		
-		#my $plain_text = $dec;
 		my $type = "";
 		my $chars = "";
 		my $enc = "";
@@ -225,8 +228,9 @@ sub decodeGuess{
 							$temp = decode_utf8 $temp;
 						};
 						if ( $@ ) {
-							print color("red"), "warning: youv made me eat non utf8 !", color("reset"), "\n";
+							print color("red"), "warning: body contains non utf8 / foreign symbols !", color("reset"), "\n";
 						}
+						local $SIG{__WARN__} = sub { }; # eat garbage warnings from FormatText
 						$content = HTML::FormatText->format_string($temp);
 					}
 					if ($content ne $temp){
@@ -294,6 +298,7 @@ sub clean_body{
 	$input =~ s/recipient: .*//g;					# 73
 	$input =~ s/Message-Id:.*//g;
 	$input =~ s/List-Unsubscribe:.*//g;				# 41		# List-Unsubscribe: <mailto:?subject=Unsubscribe>
+	$input =~ s/.*format=flowed.*//g;				# 54
 
 	return $input;
 }
