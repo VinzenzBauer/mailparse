@@ -29,6 +29,7 @@ my $content = "";
 my $spaces = '';
 
 my %mail;
+my $bodysplit = qr/([cC]ontent-[tT].{3,20}: .*?\n)/;# 1	vs 79 (just plain text)
 
 #local $SIG{__WARN__} = sub {
 #	my $message = shift;
@@ -60,9 +61,10 @@ sub decodeGuess{
 	my $iso8859qpenc	= qr/=?\??iso-8859-1\?Q\?'?(.*?)'?=?=?\?=/;
 	my $utf8qpall 		= qr/(=?\??[uUtTfF]{3}-8\?Q\?.*?=?=?\?=)(.*?<.*?>.*?)?/;	# 28 3
 	my $utf8qpenc		= qr/=?\??[uUtTfF]{3}-8\?Q\?(.*?)=?=?\?=/;
+	my $asciiqpall		= qr/(=?\??us-ascii\?Q\?.*?=?=?\?=)(.*?<.*?>.*?)?/;			# 12 78
+	my $asciiqpenc		= qr/=?\??us-ascii\?Q\?(.*?)=?=?\?=/;
 	
 	# BODY DATA
-	my $bodysplit		= qr/([cC]ontent-[tT].{3,20}: .*?\n)/;						# 1	
 	my $ContentType		= qr/[cC]ontent-[tT]ype: (?!multi)/;						# 32
 	my $ContentEnc		= qr/[cC]ontent-?[tT]ransfer-?[eE]ncoding: /;
 
@@ -70,7 +72,7 @@ sub decodeGuess{
 	if ($key2 ne "body"){
 		my @inputA = split (/\n/, $input);
 		foreach my $line (@inputA) {
-			#print color("blue"), "line parsed $key->$key2:", color("yellow"), $line, color("reset"), "\n";
+			print color("blue"), "line parsed $key->$key2:", color("yellow"), $line, color("reset"), "\n";
 
 			@matches = $line =~ /${$iso8859b64all}/g;	
 			foreach my $m (@matches) {
@@ -111,6 +113,19 @@ sub decodeGuess{
 					$inc++;
 				}		
 			}
+			@matches = $line =~ /${$asciiqpall}/g;	
+			foreach my $m (@matches) {
+				if (defined($m)){ 
+					if ($m =~ /${$asciiqpenc}/g){
+						$mail{"$key"}{"$key2"}{"$inc"}{"ascii.qp"}{enc} = $1; 
+						$mail{"$key"}{"$key2"}{"$inc"}{"ascii.qp"}{dec} = decode_qp($1); 
+					}else{
+						$mail{"$key"}{"$key2"}{"$inc"}{raw} = $m; 
+						$mail{"$key"}{"$key2"}{"$inc"}{cln} = clean_string($m); 
+					}
+					$inc++;
+				}		
+			}
 			@matches = $line =~ /${$utf8b64all}/g;	
 			foreach my $m (@matches) {
 				if (defined($m)){ 
@@ -125,14 +140,11 @@ sub decodeGuess{
 				}		
 			}
 
-			# left overs
-			if ($key2 eq "body"){
-				#$mail{"$key"}{"$key2"}{raw} .=  clean_string($line);		
-			}else{
-				$mail{"$key"}{"$key2"}{raw} .=  $line;	# bsp 1, da keine encodings im header
-				if (clean_string($mail{"$key"}{"$key2"}{raw}) ne $mail{"$key"}{"$key2"}{raw}){
-					$mail{"$key"}{"$key2"}{cln} = clean_string($mail{"$key"}{"$key2"}{raw});
-				}
+			# left overs HEADERS
+			$mail{"$key"}{"$key2"}{raw} .=  $line;	# bsp 1, da keine encodings im header
+			my $temp = clean_string($mail{"$key"}{"$key2"}{raw});
+			if ($temp ne $mail{"$key"}{"$key2"}{raw}){
+				$mail{"$key"}{"$key2"}{cln} = $temp;
 			}
 		} 
 	}
@@ -193,9 +205,9 @@ sub decodeGuess{
 				}
 				if ($m =~ /text\/(.*?)(;|$)/){									# 65 kein ;
 					$type = $1; 
-					if ($m =~    /text\/(.*?);\s?charset=?"?(.*?)"?(;.*)?\n/){	# 11 41 43 54
+					if ($m =~    /text\/(.*?);\s?charset\s?=\s?"?(.*?)"?(;.*)?\n/){	# 11 41 43 54 81
 						$chars = $2;
-					} elsif ($sA[($inc+1)] =~ /charset=?"?(.*?)"?(;.*)?\n/){ 	# 6 23
+					} elsif ($sA[($inc+1)] =~ /charset\s?=\s?"?(.*?)"?(;.*)?\n/){ 	# 6 23
 						$chars = $1;
 					} else{														# 65
 						$chars = "none";
@@ -251,7 +263,7 @@ sub decodeGuess{
 		if (exists($mail{"$key"}{"$key2"}{0})){
 			# all good
 		}else{
-			print color("red"), "not parsable, pls forward mail-code to miau\@miaut.de", color("reset"), "\n";
+			print color("red"), "FAILED PARSING MAIL-BODY, debug info below", color("reset"), "\n";
 			print color("red"), "==================\nSplit was:", color("reset"), "\n";
 			foreach my $m (@sA) {
 				print color("yellow"),"array: ", color("green"), $m, color("reset"), "\n";
@@ -302,6 +314,9 @@ sub clean_body{
 	$input =~ s/.*format=flowed.*//g;				# 54
 	$input =~ s/Content-Disposition: .*//g;			# 75
 	$input =~ s/X-Spf-.{2,10}: .*//g;				# 77
+	$input =~ s/X-(Kas)?Loop: .*//g;				# 19
+	$input =~ s/Precedence: .*//g;					# 19
+	$input =~ s/Auto-Submitted: .*//g;				# 19
 	
 	return $input;
 }
@@ -382,13 +397,17 @@ sub printLine{
 		
 		if ($temp eq $k){
 			$spaces = "\t\t\t\t";
-			#if ($temp eq "raw") { $temp = ""; }
-			if (length("@paths $temp: ") > 7) {$spaces = "\t\t\t"}
-			if (length("@paths $temp: ") > 15) {$spaces = "\t\t"}
-			if (length("@paths $temp: ") > 23) {$spaces = "\t"}		# bsp 28
-			if (length("@paths $temp: ") > 31) {$spaces = ""}		# bsp 20
+			if ($temp eq "raw") { 
+				$temp = ""; 
+			}else{
+				$temp = " $temp";
+			}
+			if (length("@paths$temp: ") > 7) {$spaces = "\t\t\t"}
+			if (length("@paths$temp: ") > 15) {$spaces = "\t\t"}
+			if (length("@paths$temp: ") > 23) {$spaces = "\t"}		# bsp 28
+			if (length("@paths$temp: ") > 31) {$spaces = ""}		# bsp 20
 			#binmode(STDOUT, ":utf8");		# vs 14: 绿茶网址	-> no warning utf8
-			print color("yellow"), "@paths $temp: ", color("reset"), $spaces.$content . color("reset") ."\n";	# <<========
+			print color("yellow"), "@paths", color("green"), $temp, color("yellow"), ": ", color("reset"), $spaces.$content . color("reset") ."\n";	# <<========
 		}					
 		#print color("yellow"), "@paths $temp: ", color("reset"), "$content\n", color("reset");
 	}	
@@ -455,6 +474,10 @@ sub hashMail{
 	{
 		hashHeaderInfo($head, $key);
 	}
+	
+	#print color("red"), "======================= :: BODY BELOW :: =======================", color("reset"), "\n";
+	#print $body;
+	
 	## MAIL BODY
 	if ($body)
 	{
@@ -462,11 +485,19 @@ sub hashMail{
 			$body =~ s/.*?$BOUNCE.*?(Return-Path)(.*)/$1$2/s;
 			hashMail($body, "bounce");
 		}else{
-			$body = $head."\n\n".$body;
-			decodeGuess($body, $key, "body");
+			if ("$head.$body" =~ /$bodysplit/g){ 	# some body-encriptions are in the header-info
+				$body = $head."\n\n".$body;			
+				decodeGuess($body, $key, "body");
+			} else { 								# some mails have just plain text bsp 79 > no decoding needed
+				$mail{"$key"}{"body"}{raw} = $body;
+				my $temp = clean_string($mail{"$key"}{"body"}{raw});
+				if ($temp ne $mail{"$key"}{"body"}{raw}){
+					$mail{"$key"}{"body"}{cln} = $temp;
+				}
+			} 
 		}
 	}else{	# ERROR in body > try to figure out which split could work # only a temporary dirty solution
-		print color("red"), "FAILED PARSING MAIL-BODY, please forward mailcode to miau\@miaut.de", color("reset"), "\n";
+		print color("red"), "FAILED PARSING MAIL-BODY, debug info below", color("reset"), "\n";
 		($head, $body) = split /\n\h*\n/, $input, 2;
 		if ($body)
 		{
@@ -483,7 +514,7 @@ sub hashMail{
 			print color("red"), "|split3 n2 works|", color("reset"), "\n";
 		}
 		print color("red"), "==================\nMailcode is:", color("reset"), "\n";
-		print $input;
+		#print $input;
 	}
 }
 
@@ -491,18 +522,24 @@ sub hashMail{
 foreach my $line ( <STDIN> ) {
     $PIPE .= $line;
 }
-### HASH WHOLE CONVERSATION
+print color("red"), "======================= :: RAW MAIL BELOW :: =======================", color("reset"), "\n";
+print $PIPE;
+
+print color("red"), "======================= :: HEADER LINES BELOW :: =======================", color("reset"), "\n";
 hashMail($PIPE);
+
 ### OUTPUT PARSED INFO
-print color("red"), "======================= :: DEBUG HASH :: =======================", color("reset"), "\n";
+print color("red"), "======================= :: DEBUG HASH BELOW :: =======================", color("reset"), "\n";
 print Dumper(\%mail);
+
+print color("red"), "============= THE ABOVE IS JUST FOR ERROR-DEBUGGING, IGNORE THAT =============", color("reset"), "\n";
 print color("green"), "======================= :: MAIL PARSE ATTEMPT BELOW :: =======================", color("reset"), "\n";
 if (exists $mail{origin}){
 	printMail($mail{"origin"});
 }
 if (exists $mail{bounce}){
 	## HEADER INFO
-	print color("red"), "======================= :: THIS IS A BOUNCE :: Orig Message BELOW :: =======================", color("reset"), "\n";
+	print color("red"), "================ :: THIS IS A BOUNCE :: Orig Message BELOW :: ================", color("reset"), "\n";
 	#push(@paths, "bounce");
 	printMail($mail{"bounce"});
 }
