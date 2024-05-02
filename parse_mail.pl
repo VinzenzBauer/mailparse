@@ -263,10 +263,9 @@ sub decodeGuess{
 		if (exists($mail{"$key"}{"$key2"}{0})){
 			# all good
 		}else{
-			print color("red"), "FAILED PARSING MAIL-BODY, debug info below", color("reset"), "\n";
-			print color("red"), "==================\nSplit was:", color("reset"), "\n";
+			print color("red"), "===== FAILED PARSING MAIL-BODY, OR BODY EMPTY => debug info below =====", color("reset"), "\n";
 			foreach my $m (@sA) {
-				print color("yellow"),"array: ", color("green"), $m, color("reset"), "\n";
+				print color("yellow"),"array split: ", color("green"), $m, color("reset"), "\n";
 			}
 		}
 	}
