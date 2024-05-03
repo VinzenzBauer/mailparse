@@ -129,13 +129,13 @@ sub decodeGuess{
 			@matches = $line =~ /${$utf8b64all}/g;	
 			foreach my $m (@matches) {
 				if (defined($m)){ 
-					print color("red"),"matched uft 8 b: \'", color("green"), $m, color("reset"), "\'\n";
+					#print color("red"),"matched uft 8 b: \'", color("green"), $m, color("reset"), "\'\n";
 					if ($m =~ /${$utf8b64enc}/g){
-						print color("red"),"matched enc uft 8 b: \'", color("green"), $m, color("reset"), "\'\n";
+						#print color("red"),"matched enc uft 8 b: \'", color("green"), $m, color("reset"), "\'\n";
 						$mail{"$key"}{"$key2"}{"$inc"}{"utf8.b64"}{enc} = $1; 
 						$mail{"$key"}{"$key2"}{"$inc"}{"utf8.b64"}{dec} = MIME::Base64::decode($1); 
 					}else{
-						print color("red"),"matched non enc uft 8 b: \'", color("green"), $m, color("reset"), "\'\n";
+						#print color("red"),"matched non enc uft 8 b: \'", color("green"), $m, color("reset"), "\'\n";
 						$mail{"$key"}{"$key2"}{"$inc"}{raw} = $m; 
 						$mail{"$key"}{"$key2"}{"$inc"}{cln} = clean_string($m); 
 					}
