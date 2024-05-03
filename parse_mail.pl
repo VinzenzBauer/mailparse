@@ -53,16 +53,16 @@ sub decodeGuess{
 	my @matches;
 	
 	# HEADER DATA
-	my $iso8859b64all 	= qr/(=?\??iso-8859-1\?B\?.*?=?=?\?=)(.*?<.*?>.*?)?/;		# 5
-	my $iso8859b64enc	= qr/=?\??iso-8859-1\?B\?(.*?)=?=?\?=/;
-	my $utf8b64all 		= qr/(=?\??[uUtTfF]{3}-8\?B\?.*?=?=?\?=)(.*?<.*?>.*?)?/;	# 14 28
-	my $utf8b64enc		= qr/=?\??[uUtTfF]{3}-8\?B\?(.*?)=?=?\?=/;
-	my $iso8859qpall 	= qr/(=?\??iso-8859-1\?Q\?.*?=?=?\?=)(.*?<.*?>.*?)?/;		# 20
-	my $iso8859qpenc	= qr/=?\??iso-8859-1\?Q\?'?(.*?)'?=?=?\?=/;
-	my $utf8qpall 		= qr/(=?\??[uUtTfF]{3}-8\?Q\?.*?=?=?\?=)(.*?<.*?>.*?)?/;	# 28 3
-	my $utf8qpenc		= qr/=?\??[uUtTfF]{3}-8\?Q\?(.*?)=?=?\?=/;
-	my $asciiqpall		= qr/(=?\??us-ascii\?Q\?.*?=?=?\?=)(.*?<.*?>.*?)?/;			# 12 78
-	my $asciiqpenc		= qr/=?\??us-ascii\?Q\?(.*?)=?=?\?=/;
+	my $iso8859b64all 	= qr/(=?\??iso-8859-1\?B\?.*?=?=?\?=)(.*?<.*?>.*?)?/i;		# 5
+	my $iso8859b64enc	= qr/=?\??iso-8859-1\?B\?(.*?)=?=?\?=/i;
+	my $utf8b64all 		= qr/(=?\??utf-8\?B\?.*?=?=?\?=)(.*?<.*?>.*?)?/i;	# 14 28
+	my $utf8b64enc		= qr/=?\??uft-8\?B\?(.*?)=?=?\?=/i;
+	my $iso8859qpall 	= qr/(=?\??iso-8859-1\?Q\?.*?=?=?\?=)(.*?<.*?>.*?)?/i;		# 20
+	my $iso8859qpenc	= qr/=?\??iso-8859-1\?Q\?'?(.*?)'?=?=?\?=/i;
+	my $utf8qpall 		= qr/(=?\??utf-8\?Q\?.*?=?=?\?=)(.*?<.*?>.*?)?/i;	# 28 3
+	my $utf8qpenc		= qr/=?\??utf-8\?Q\?(.*?)=?=?\?=/i;
+	my $asciiqpall		= qr/(=?\??us-ascii\?Q\?.*?=?=?\?=)(.*?<.*?>.*?)?/i;			# 12 78
+	my $asciiqpenc		= qr/=?\??us-ascii\?Q\?(.*?)=?=?\?=/i;
 	
 	# BODY DATA
 	my $ContentType		= qr/[cC]ontent-[tT]ype: (?!multi)/;						# 32
@@ -187,19 +187,19 @@ sub decodeGuess{
 		foreach my $m (@sA) {
 			if ($m =~ /$bodysplit/g){ # Content-Type:
 			
-				if ($m =~ /[qQ]uoted-[pP]rintable/){
+				if ($m =~ /quoted-printable/i){
 					if ($order eq "TE" && $type ne ''){ $enc = "qp"; } 
 					if ($order eq "ET" && $type eq ''){ $enc = "qp"; }
 				}
-				if ($m =~ /[bB]ase64/){
+				if ($m =~ /base64/i){
 					if ($order eq "TE" && $type ne ''){ $enc = "b64"; } 
 					if ($order eq "ET" && $type eq ''){ $enc = "b64"; } 
 				}
-				if ($m =~ /7[bB]it/){
+				if ($m =~ /7bit/i){
 					if ($order eq "TE" && $type ne ''){ $enc = "7b"; }	# 29
 					if ($order eq "ET" && $type eq ''){ $enc = "7b"; }
 				}
-				if ($m =~ /8[bB]it/){
+				if ($m =~ /8bit/i){
 					if ($order eq "TE" && $type ne ''){ $enc = "8b"; }
 					if ($order eq "ET" && $type eq ''){ $enc = "8b"; }
 				}
@@ -219,7 +219,7 @@ sub decodeGuess{
 				$content = $sA[($inc+1)];
 				if (defined($content) && $content ne '' && $content !~ /$bodysplit/g){
 					my $temp = $content;
-					if ($chars =~ /[uUtTfF]{3}-?8/){
+					if ($chars =~ /utf-?8/i){
 						$content = decode('utf-8', $content);
 					}
 					#print color("yellow"),"$cont -> ", color("red"),  "before!: $type.$chars.$enc: \"$content\"", color("reset"), "\n";
@@ -427,31 +427,31 @@ sub hashHeaderInfo{
 			decodeGuess($line, $key, "ip");
 		};
 		if ($line =~ m/^$RECEIVED/) {
-			$line =~ s/^[^:]*:\s//;
+			$line =~ s/^[^:]*:\s?//;
 			decodeGuess($line, $key, "received");
 		};
 		if ($line =~ m/^$DATE/) {
-			$line =~ s/^[^,]*,\s//;
+			$line =~ s/^[^,]*,\s?//;
 			decodeGuess($line, $key, "date");
 		};
 		if ($line =~ m/^$XSENDER/) {
-			$line =~ s/^[^:]*:\s//;
+			$line =~ s/^[^:]*:\s?//;
 			decodeGuess($line, $key, "sender");
 		};
 		if ($line =~ m/^$FROM/) {
-			$line =~ s/^[^:]*:\s//;
+			$line =~ s/^[^:]*:\s?//;				# 65 kein \s nach from:
 			decodeGuess($line, $key, "from");
 		};
 		if ($line =~ m/^$TO/) {
-			$line =~ s/^[^:]*:\s//;
+			$line =~ s/^[^:]*:\s?//;
 			decodeGuess($line, $key, "to");
 		};
 		if ($line =~ m/^$REPLYTO/) {
-			$line =~ s/^[^:]*:\s//;
+			$line =~ s/^[^:]*:\s?//;
 			decodeGuess($line, $key, "replyto");
 		};
 		if ($line =~ m/^$SUBJECT/) {
-			$line =~ s/^[^:]*:\s//;
+			$line =~ s/^[^:]*:\s?//;
 			decodeGuess($line, $key, "subject");
 		};
 	}
