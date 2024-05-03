@@ -53,16 +53,16 @@ sub decodeGuess{
 	my @matches;
 	
 	# HEADER DATA
-	my $iso8859b64all 	= qr/(=?\??iso-8859-1\?B\?.*?=?=?\?=)(.*?<.*?>.*?)?/i;		# 5
-	my $iso8859b64enc	= qr/=?\??iso-8859-1\?B\?(.*?)=?=?\?=/i;
-	my $utf8b64all 		= qr/(=?\??utf-8\?B\?.*?=?=?\?=)(.*?<.*?>.*?)?/i;	# 14 28
-	my $utf8b64enc		= qr/=?\??uft-8\?B\?(.*?)=?=?\?=/i;
-	my $iso8859qpall 	= qr/(=?\??iso-8859-1\?Q\?.*?=?=?\?=)(.*?<.*?>.*?)?/i;		# 20
-	my $iso8859qpenc	= qr/=?\??iso-8859-1\?Q\?'?(.*?)'?=?=?\?=/i;
-	my $utf8qpall 		= qr/(=?\??utf-8\?Q\?.*?=?=?\?=)(.*?<.*?>.*?)?/i;	# 28 3
-	my $utf8qpenc		= qr/=?\??utf-8\?Q\?(.*?)=?=?\?=/i;
-	my $asciiqpall		= qr/(=?\??us-ascii\?Q\?.*?=?=?\?=)(.*?<.*?>.*?)?/i;			# 12 78
-	my $asciiqpenc		= qr/=?\??us-ascii\?Q\?(.*?)=?=?\?=/i;
+	my $iso8859b64all 	= qr/(=?\??iso-8859-1\?b\?.*?=?=?\?=)(.*?<.*?>.*?)?/i;		# 5
+	my $iso8859b64enc	=  qr/=?\??iso-8859-1\?b\?(.*?)=?=?\?=/i;
+	my $utf8b64all 		= qr/(=?\??utf-8\?b\?.*?=?=?\?=)(.*?<.*?>.*?)?/i;			# 14 28
+	my $utf8b64enc		=  qr/=?\??utf-8\?b\?(.*?)=?=?\?=/i;						# 84
+	my $iso8859qpall 	= qr/(=?\??iso-8859-1\?q\?.*?=?=?\?=)(.*?<.*?>.*?)?/i;		# 20
+	my $iso8859qpenc	=  qr/=?\??iso-8859-1\?q\?'?(.*?)'?=?=?\?=/i;
+	my $utf8qpall 		= qr/(=?\??utf-8\?q\?.*?=?=?\?=)(.*?<.*?>.*?)?/i;			# 28 3
+	my $utf8qpenc		=  qr/=?\??utf-8\?q\?(.*?)=?=?\?=/i;
+	my $asciiqpall		= qr/(=?\??us-ascii\?q\?.*?=?=?\?=)(.*?<.*?>.*?)?/i;		# 12 78
+	my $asciiqpenc		=  qr/=?\??us-ascii\?q\?(.*?)=?=?\?=/i;
 	
 	# BODY DATA
 	my $ContentType		= qr/[cC]ontent-[tT]ype: (?!multi)/;						# 32
@@ -129,15 +129,18 @@ sub decodeGuess{
 			@matches = $line =~ /${$utf8b64all}/g;	
 			foreach my $m (@matches) {
 				if (defined($m)){ 
+					print color("red"),"matched uft 8 b: \'", color("green"), $m, color("reset"), "\'\n";
 					if ($m =~ /${$utf8b64enc}/g){
+						print color("red"),"matched enc uft 8 b: \'", color("green"), $m, color("reset"), "\'\n";
 						$mail{"$key"}{"$key2"}{"$inc"}{"utf8.b64"}{enc} = $1; 
 						$mail{"$key"}{"$key2"}{"$inc"}{"utf8.b64"}{dec} = MIME::Base64::decode($1); 
 					}else{
+						print color("red"),"matched non enc uft 8 b: \'", color("green"), $m, color("reset"), "\'\n";
 						$mail{"$key"}{"$key2"}{"$inc"}{raw} = $m; 
 						$mail{"$key"}{"$key2"}{"$inc"}{cln} = clean_string($m); 
 					}
 					$inc++;
-				}		
+				}
 			}
 
 			# left overs HEADERS
