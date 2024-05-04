@@ -160,10 +160,10 @@ sub decodeGuess{
 		my $content = "";
 		
 		my $typecode = "";
-		if ($input =~ /${$ContentType}((.*?\n?.*?){0,3})${$ContentEnc}/g){		# 1
+		if ($input =~ /${$ContentType}(.*?\n?.*?){0,3}${$ContentEnc}/g){		# 1 86 88
 			#print color("red"),"type first!", color("reset"), "\n";
 			$order = "TE";
-		}elsif ($input =~ /${$ContentEnc}((.*?\n?.*?){0,3})${$ContentType}/g){	# 54
+		}elsif ($input =~ /${$ContentEnc}(.*?\n?.*?){0,3}${$ContentType}/g){	# 54
 			#print color("red"),"enc first!", color("reset"), "\n";
 			$order = "ET";
 		}elsif ($input =~ /${$ContentType}/g){									# 40
@@ -182,8 +182,8 @@ sub decodeGuess{
 
 		my @sA = split (/${$bodysplit}/, $input);
 		#foreach my $m (@sA) {
-		#	print color("yellow"),"array: ", color("green"), $m, color("reset"), "\n";
-		#}
+	#		print color("yellow"),"array: ", color("green"), $m, color("reset"), "\n";
+	#	}
 
 		$inc = 0;
 		my $cont = 0;
@@ -298,6 +298,7 @@ sub clean_body{
 	$input =~ s/Message-ID:.*\n//g;					# 18
 	$input =~ s/--.*?\.kasserver\.com--.*//g;		# 21
 	$input =~ s/--.*?=_.*?--//g;					# 4			# --b1=_5rL5sE1gxdXRyxPfwuXw0g0LmvTlwggj9CiWdPjZk--
+	$input =~ s/----_.*?-.*?-.*//g;					# 87		# ----_NmP-e7875a061ce819fc-Part_1
 	$input =~ s/--_=_.*?_=_.*\n//g;					# 26		# --_=_swift_v4_1711953407_a6d0eab157ec92d9_=_--
 	$input =~ s/--[a-zA-Z0-9=_]*(--)?\n//g;			# 27 33 35	# --a8e4ad06f2361c1e5df79aface0b32c8254c--
 	$input =~ s/--Apple-.*(--)?\n//g;				# 29		# --Apple-Mail-EAFC032E-8C51-4A17-82BC-BB3B42F3BD85
@@ -308,6 +309,7 @@ sub clean_body{
 	$input =~ s/X-Mailer:.*//g;						# 41		# X-Mailer: express
 	$input =~ s/X-MSMail-Priority:.*//g;			# 41		# X-MSMail-Priority: High
 	$input =~ s/X-Dmarc-Test:.*//g;					# 52
+	$input =~ s/X-Auto-Response-Suppress:.*//g;		# 86
 	$input =~ s/named_attribute: .*//g;				# 52
 	$input =~ s/original_recipient: .*//g;			# 73
 	$input =~ s/recipient: .*//g;					# 73
