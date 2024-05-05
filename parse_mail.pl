@@ -37,8 +37,31 @@ my $bodysplit = qr/([cC]ontent-[tT].{3,20}: .*?\n)/;# 1	vs 79 (just plain text)
 #};
 
 #my @removals = qw( &nbsp; &copy; &quot; &zwnj; \x{200c} \x{34f} );		# bsp: 1 43
-							
+
 ### SUBROUTINES
+
+sub extractkey{ # turn key "html.none.none" to "html"
+	my ($type, $chars, $enc) = @_;
+	my $key = "";
+	my $before = "";
+	
+	if ($type && $type ne "none") { 
+		$key.=$type; 
+	}
+	
+	if ($chars && $chars ne "none") { 
+		if ($key ne $before) { $key.="."; $before=$key; }
+		$key.=$chars; 
+	}
+	
+	if ($enc && $enc ne "none") { 
+		if ($key ne $before) { $key.="."; $before=$key; }
+		$key.=$enc; 
+	}
+	
+	return $key;
+}
+
 sub decodeGuess{
 	my $input = shift || '';
 	my $key = shift || '';
@@ -161,29 +184,39 @@ sub decodeGuess{
 		
 		my $typecode = "";
 		if ($input =~ /${$ContentType}(.*?\n?.*?){0,3}${$ContentEnc}/g){		# 1 86 88
-			#print color("red"),"type first!", color("reset"), "\n";
+			print color("red"),"type first!", color("reset"), "\n";
 			$order = "TE";
 		}elsif ($input =~ /${$ContentEnc}(.*?\n?.*?){0,3}${$ContentType}/g){	# 54
-			#print color("red"),"enc first!", color("reset"), "\n";
+			print color("red"),"enc first!", color("reset"), "\n";
 			$order = "ET";
-		}elsif ($input =~ /${$ContentType}/g){									# 40
-			#print color("red"),"type only!", color("reset"), "\n";
-			$order = "T";
-			$enc = "none";
+		}elsif ($input =~ /${$ContentType}/g){									# 40 86: 7 zeilen dazwischen
+			if ($input =~ /${$ContentEnc}/g){
+				print color("red"),"type first & enc later!", color("reset"), "\n";
+				$order = "T E";
+			}else{
+				print color("red"),"type only!", color("reset"), "\n";
+				$order = "T";
+				$enc = "none";
+			}
 		}elsif ($input =~ /${$ContentEnc}/g){
-			#print color("red"),"enc only!", color("reset"), "\n";
-			$order = "E";
-			$type = "none";
-			$chars = "none";
+			if ($input =~ /${$ContentType}/g){
+				print color("red"),"enc first & type later!", color("reset"), "\n";
+				$order = "E T";
+			}else{
+				print color("red"),"enc only!", color("reset"), "\n";
+				$order = "E";
+				$type = "none";
+				$chars = "none";
+			}
 		}else{
-			#print color("red"),"raw only!", color("reset"), "\n";
+			print color("red"),"raw only!", color("reset"), "\n";
 			$order = "R";
 		};
 
 		my @sA = split (/${$bodysplit}/, $input);
-		#foreach my $m (@sA) {
-	#		print color("yellow"),"array: ", color("green"), $m, color("reset"), "\n";
-	#	}
+		foreach my $m (@sA) {
+			print color("yellow"),"array: ", color("green"), $m, color("reset"), "\n";
+		}
 
 		$inc = 0;
 		my $cont = 0;
@@ -193,24 +226,28 @@ sub decodeGuess{
 				if ($m =~ /quoted-printable/i){
 					if ($order eq "TE" && $type ne ''){ $enc = "qp"; } 
 					if ($order eq "ET" && $type eq ''){ $enc = "qp"; }
+					if ($order eq "T E" || $order eq "E T"){ $enc = "qp"; }		# 86
 				}
 				if ($m =~ /base64/i){
 					if ($order eq "TE" && $type ne ''){ $enc = "b64"; } 
 					if ($order eq "ET" && $type eq ''){ $enc = "b64"; } 
+					if ($order eq "T E" || $order eq "E T"){ $enc = "b64"; }	# 86
 				}
 				if ($m =~ /7bit/i){
 					if ($order eq "TE" && $type ne ''){ $enc = "7b"; }	# 29
 					if ($order eq "ET" && $type eq ''){ $enc = "7b"; }
+					if ($order eq "T E" || $order eq "E T"){ $enc = "7b"; }		# 86
 				}
 				if ($m =~ /8bit/i){
 					if ($order eq "TE" && $type ne ''){ $enc = "8b"; }
 					if ($order eq "ET" && $type eq ''){ $enc = "8b"; }
+					if ($order eq "T E" || $order eq "E T"){ $enc = "8b"; }		# 86
 				}
 				if ($m =~ /text\/(.*?)(;|$)/){									# 65 kein ;
 					$type = $1; 
 					if ($m =~    /text\/(.*?);\s?charset\s?=\s?"?(.*?)"?(;.*)?\n/){	# 11 41 43 54 81
 						$chars = $2;
-					} elsif ($sA[($inc+1)] =~ /charset\s?=\s?"?(.*?)"?(;.*)?\n/){ 	# 6 23
+					} elsif ($sA[($inc+1)] =~ /^\s*charset\s?=\s?"?(.*?)"?(;.*)?\n/){ 	# 6 23 90
 						$chars = $1;
 					} else{														# 65
 						$chars = "none";
@@ -245,14 +282,15 @@ sub decodeGuess{
 						local $SIG{__WARN__} = sub { }; # eat garbage warnings from FormatText
 						$content = HTML::FormatText->format_string($temp);
 					}
+					
 					if ($content ne $temp){
-						$mail{"$key"}{"$key2"}{"$cont"}{"$type.$chars.$enc"}{dec} = $content;
+						$mail{"$key"}{"$key2"}{"$cont"}{extractkey($type, $chars, $enc)}{dec} = $content;
 					}else{
-						$mail{"$key"}{"$key2"}{"$cont"}{"$type.$chars.$enc"}{raw} = $temp;
+						$mail{"$key"}{"$key2"}{"$cont"}{extractkey($type, $chars, $enc)}{raw} = $temp;
 					}
 					$content = clean_string($content);
 					if ($content ne $temp){
-						$mail{"$key"}{"$key2"}{"$cont"}{"$type.$chars.$enc"}{cln} = $content;
+						$mail{"$key"}{"$key2"}{"$cont"}{extractkey($type, $chars, $enc)}{cln} = $content;
 					}
 					#print color("red"),"resettet!: $type.$chars.$enc: \"$content\"", color("reset"), "\n";
 					$type = ""; $chars = ""; $enc = ""; $content = "";
@@ -321,6 +359,7 @@ sub clean_body{
 	$input =~ s/X-(Kas)?Loop: .*//g;				# 19
 	$input =~ s/Precedence: .*//g;					# 19
 	$input =~ s/Auto-Submitted: .*//g;				# 19
+	$input =~ s/MIME-Version: .*//g;				# 86
 	
 	return $input;
 }
