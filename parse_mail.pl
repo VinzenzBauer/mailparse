@@ -17,6 +17,7 @@ my $FROM = "From:.*";								# From: TPMS-SAS-Live <tpms-sas-outbox.de>
 my $TO = "To:.*";                           		# To: "Messing Ragert, Ingrid  10162" <10162@sas.dk>
 my $SUBJECT = "Subject:.*";                    		# Subject: Event report Filed
 my $XSENDER = "X-SenderIP:.*";						# X-SenderIP: 84.....120 bsp 21
+my $SENDER = "sender:.*";							# 93 sender: bounces@jjjjjjjdfddsdsd.com
 my $REPLYTO = "Reply-To:.*";
 my $RECEIVED = "Received:.*";						# Received: from ....ru (unknown [147....106]) bsp 23	
 my $XPAMD = "X-Spamd-Bar:.*";						# X-Spamd-Bar: +++ # 40
@@ -30,6 +31,7 @@ my $spaces = '';
 
 my %mail;
 my $bodysplit = qr/([cC]ontent-[tT].{3,20}: .*?\n)/;# 1	vs 79 (just plain text)
+my $debug;
 
 #local $SIG{__WARN__} = sub {
 #	my $message = shift;
@@ -95,7 +97,9 @@ sub decodeGuess{
 	if ($key2 ne "body"){
 		my @inputA = split (/\n/, $input);
 		foreach my $line (@inputA) {
-			print color("blue"), "line parsed $key->$key2:", color("yellow"), $line, color("reset"), "\n";
+			if ($debug eq 1){
+				print color("blue"), "line parsed $key->$key2:", color("yellow"), $line, color("reset"), "\n";
+			}
 
 			@matches = $line =~ /${$iso8859b64all}/g;	
 			foreach my $m (@matches) {
@@ -184,38 +188,54 @@ sub decodeGuess{
 		
 		my $typecode = "";
 		if ($input =~ /${$ContentType}(.*?\n?.*?){0,3}${$ContentEnc}/g){		# 1 86 88
-			print color("red"),"type first!", color("reset"), "\n";
+			if ($debug eq 1){
+				print color("red"),"type first!", color("reset"), "\n";
+			}
 			$order = "TE";
 		}elsif ($input =~ /${$ContentEnc}(.*?\n?.*?){0,3}${$ContentType}/g){	# 54
-			print color("red"),"enc first!", color("reset"), "\n";
+			if ($debug eq 1){
+				print color("red"),"enc first!", color("reset"), "\n";
+			}
 			$order = "ET";
 		}elsif ($input =~ /${$ContentType}/g){									# 40 86: 7 zeilen dazwischen
 			if ($input =~ /${$ContentEnc}/g){
-				print color("red"),"type first & enc later!", color("reset"), "\n";
+				if ($debug eq 1){
+					print color("red"),"type first & enc later!", color("reset"), "\n";
+				}
 				$order = "T E";
 			}else{
-				print color("red"),"type only!", color("reset"), "\n";
+				if ($debug eq 1){
+					print color("red"),"type only!", color("reset"), "\n";
+				}
 				$order = "T";
 				$enc = "none";
 			}
 		}elsif ($input =~ /${$ContentEnc}/g){
 			if ($input =~ /${$ContentType}/g){
-				print color("red"),"enc first & type later!", color("reset"), "\n";
+				if ($debug eq 1){
+					print color("red"),"enc first & type later!", color("reset"), "\n";
+				}
 				$order = "E T";
 			}else{
-				print color("red"),"enc only!", color("reset"), "\n";
+				if ($debug eq 1){
+					print color("red"),"enc only!", color("reset"), "\n";
+				}
 				$order = "E";
 				$type = "none";
 				$chars = "none";
 			}
 		}else{
-			print color("red"),"raw only!", color("reset"), "\n";
+			if ($debug eq 1){
+				print color("red"),"raw only!", color("reset"), "\n";
+			}
 			$order = "R";
 		};
 
 		my @sA = split (/${$bodysplit}/, $input);
-		foreach my $m (@sA) {
-			print color("yellow"),"array: ", color("green"), $m, color("reset"), "\n";
+		if ($debug eq 1){
+			foreach my $m (@sA) {
+				print color("yellow"),"array: ", color("green"), $m, color("reset"), "\n";
+			}
 		}
 
 		$inc = 0;
@@ -327,6 +347,7 @@ sub clean_body{
 	$input =~ s/$TO//g;
 	$input =~ s/$SUBJECT//g;
 	$input =~ s/$XSENDER//g;
+	$input =~ s/$SENDER//g;
 	$input =~ s/$RECEIVED//g;
 	$input =~ s/$XPAMD//g;
 	$input =~ s/$XPAM//g;
@@ -480,6 +501,10 @@ sub hashHeaderInfo{
 		};
 		if ($line =~ m/^$XSENDER/) {
 			$line =~ s/^[^:]*:\s?//;
+			decodeGuess($line, $key, "xsender");
+		};
+		if ($line =~ m/^$SENDER/) {
+			$line =~ s/^[^:]*:\s?//;
 			decodeGuess($line, $key, "sender");
 		};
 		if ($line =~ m/^$FROM/) {
@@ -565,17 +590,21 @@ sub hashMail{
 foreach my $line ( <STDIN> ) {
     $PIPE .= $line;
 }
-print color("red"), "======================= :: RAW MAIL BELOW :: =======================", color("reset"), "\n";
-print $PIPE;
+$debug = shift;
+if ($debug eq 1){
+	print color("red"), "======================= :: RAW MAIL BELOW :: =======================", color("reset"), "\n";
+	print $PIPE;
+	print color("red"), "======================= :: HEADER LINES BELOW :: =======================", color("reset"), "\n";
+}
 
-print color("red"), "======================= :: HEADER LINES BELOW :: =======================", color("reset"), "\n";
 hashMail($PIPE);
 
 ### OUTPUT PARSED INFO
-print color("red"), "======================= :: DEBUG HASH BELOW :: =======================", color("reset"), "\n";
-print Dumper(\%mail);
-
-print color("red"), "============= THE ABOVE IS JUST FOR ERROR-DEBUGGING, IGNORE THAT =============", color("reset"), "\n";
+if ($debug eq 1){
+	print color("red"), "======================= :: DEBUG HASH BELOW :: =======================", color("reset"), "\n";
+	print Dumper(\%mail);
+	print color("red"), "==================== THE ABOVE IS DEBUGGING - IGNORE THAT ====================", color("reset"), "\n";
+}
 print color("green"), "======================= :: MAIL PARSE ATTEMPT BELOW :: =======================", color("reset"), "\n";
 if (exists $mail{origin}){
 	printMail($mail{"origin"});
