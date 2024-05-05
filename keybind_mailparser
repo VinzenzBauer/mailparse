@@ -13,7 +13,7 @@ if [[ $selected =~ ^tmp[0-9a-Z_]{14}$ ]]; then
 fi
 
 #7FD694248CDB			12 große symbole	mailq
-if [[ $selected =~ ^[0-9A-Z_]{12}$ ]]; then
+if [[ $selected =~ ^[0-9A-Z_]{11,12}$ ]]; then
 	ismail=2
 	command="postcat -q $selected | perl <(wget -qO- https://raw.githubusercontent.com/VinzenzBauer/mailparse/main/parse_mail.pl)"
 fi

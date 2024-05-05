@@ -558,7 +558,9 @@ sub hashMail{
 				decodeGuess($body, $key, "body");
 			} else { 								# some mails have just plain text bsp 79 > no decoding needed
 				$mail{"$key"}{"body"}{raw} = $body;
-				my $temp = clean_string($mail{"$key"}{"body"}{raw});
+				my $temp = clean_body($mail{"$key"}{"body"}{raw});		# 80
+				$temp = clean_string($temp);
+				#my $temp = clean_string($mail{"$key"}{"body"}{raw});
 				if ($temp ne $mail{"$key"}{"body"}{raw}){
 					$mail{"$key"}{"body"}{cln} = $temp;
 				}
