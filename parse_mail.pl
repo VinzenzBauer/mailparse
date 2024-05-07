@@ -32,7 +32,8 @@ my $spaces = '';
 
 my %mail;
 my $bodysplit = qr/([cC]ontent-[tT].{3,20}: .*?\n)/;# 1	vs 79 (just plain text)
-my $debug = "";
+my $debug = 0;
+my $maxlines = 30;
 
 #local $SIG{__WARN__} = sub {
 #	my $message = shift;
@@ -98,7 +99,7 @@ sub decodeGuess{
 	if ($key2 ne "body"){
 		my @inputA = split (/\n/, $input);
 		foreach my $line (@inputA) {
-			if ($debug eq "1"){
+			if ($debug eq 1){
 				print color("blue"), "line parsed $key->$key2:", color("yellow"), $line, color("reset"), "\n";
 			}
 
@@ -194,23 +195,23 @@ sub decodeGuess{
 		
 		my $typecode = "";
 		if ($input =~ /${$ContentType}(.*?\n?.*?){0,3}${$ContentEnc}/g){		# 1 86 88
-			if ($debug eq "1"){
+			if ($debug eq 1){
 				print color("red"),"type first!", color("reset"), "\n";
 			}
 			$order = "TE";
 		}elsif ($input =~ /${$ContentEnc}(.*?\n?.*?){0,3}${$ContentType}/g){	# 54
-			if ($debug eq "1"){
+			if ($debug eq 1){
 				print color("red"),"enc first!", color("reset"), "\n";
 			}
 			$order = "ET";
 		}elsif ($input =~ /${$ContentType}/g){									# 40 86: 7 zeilen dazwischen
 			if ($input =~ /${$ContentEnc}/g){
-				if ($debug eq "1"){
+				if ($debug eq 1){
 					print color("red"),"type first & enc later!", color("reset"), "\n";
 				}
 				$order = "T E";
 			}else{
-				if ($debug eq "1"){
+				if ($debug eq 1){
 					print color("red"),"type only!", color("reset"), "\n";
 				}
 				$order = "T";
@@ -218,12 +219,12 @@ sub decodeGuess{
 			}
 		}elsif ($input =~ /${$ContentEnc}/g){
 			if ($input =~ /${$ContentType}/g){
-				if ($debug eq "1"){
+				if ($debug eq 1){
 					print color("red"),"enc first & type later!", color("reset"), "\n";
 				}
 				$order = "E T";
 			}else{
-				if ($debug eq "1"){
+				if ($debug eq 1){
 					print color("red"),"enc only!", color("reset"), "\n";
 				}
 				$order = "E";
@@ -231,14 +232,14 @@ sub decodeGuess{
 				$chars = "none";
 			}
 		}else{
-			if ($debug eq "1"){
+			if ($debug eq 1){
 				print color("red"),"raw only!", color("reset"), "\n";
 			}
 			$order = "R";
 		};
 
 		my @sA = split (/${$bodysplit}/, $input);
-		if ($debug eq "1"){
+		if ($debug eq 1){
 			foreach my $m (@sA) {
 				print color("yellow"),"array: ", color("green"), $m, color("reset"), "\n";
 			}
@@ -418,16 +419,16 @@ sub printMail{
 	
 	#handle print cln and raw always first
 	if ( exists($input->{"cln"}) ){
-		printLine($input, "cln");
+		printMailItem($input, "cln");
 	}elsif ( exists($input->{"raw"}) ){
-		printLine($input, "raw");
+		printMailItem($input, "raw");
 	}
 	
 	while(my($k, $v) = each %{$input}) {
 		if (exists($input->{$k}) && ($k ne "body")){
 			if ($k =~ /(raw|enc|dec|cln)/){
 				if ($k !~ /(cln|raw)/){	# already handled above while beeing print first
-					printLine($input, "$k");
+					printMailItem($input, "$k");
 				}
 			}else{
 				# handle numbered
@@ -449,7 +450,7 @@ sub printMail{
 		}
 	}
 }
-sub printLine{
+sub printMailItem{
 	my($input, $k) = @_;
 	my $temp = "";
 
@@ -483,6 +484,10 @@ sub printLine{
 			if (length("@paths$temp: ") > 24) {$spaces = "\t"}		# bsp 28 8
 			if (length("@paths$temp: ") > 31) {$spaces = ""}		# bsp 20
 			#binmode(STDOUT, ":utf8");		# vs 14: 绿茶网址	-> no warning utf8
+			if ($content=~ m/(.*\n){$maxlines,}/){ # more than 10 multilines > shorten
+				$content = join "\n", (split "\n", $content)[0 .. $maxlines];
+				$content.= "\n...";
+			}
 			if ($content=~ m/.*\n.*/) { 
 				$content = "\n".$content ;
 				print color("yellow"), "@paths", color("green"), $temp, color("yellow"), ":", color("reset"), $content . color("reset") ."\n";	# <<========
@@ -622,8 +627,11 @@ sub hashMail{
 foreach my $line ( <STDIN> ) {
     $PIPE .= $line;
 }
-$debug = shift || "";
-if ($debug eq "1"){
+$debug = shift || 0;
+$maxlines = ($debug > 1)? $debug : $maxlines;
+$debug = ($debug == 1)? 1: 0;
+
+if ($debug eq 1){
 	print color("red"), "======================= :: RAW MAIL BELOW :: =======================", color("reset"), "\n";
 	print $PIPE;
 	print color("red"), "======================= :: HEADER LINES BELOW :: =======================", color("reset"), "\n";
@@ -632,7 +640,7 @@ if ($debug eq "1"){
 hashMail($PIPE);
 
 ### OUTPUT PARSED INFO
-if ($debug eq "1"){
+if ($debug eq 1){
 	print color("red"), "======================= :: DEBUG HASH BELOW :: =======================", color("reset"), "\n";
 	print Dumper(\%mail);
 	print color("red"), "==================== THE ABOVE IS DEBUGGING - IGNORE THAT ====================", color("reset"), "\n";
