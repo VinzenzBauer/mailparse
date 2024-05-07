@@ -173,7 +173,8 @@ sub decodeGuess{
 
 			# left overs HEADERS # bsp 1, da keine encodings im header
 			if ($mail{"$key"}{"$key2"}{raw}){ # multilines bsp: 98 4* received
-				$mail{"$key"}{"$key2"}{raw} .=  "\n".$line;	
+				#$mail{"$key"}{"$key2"}{raw} .=  "\n\t\t\t\t".$line;	
+				$mail{"$key"}{"$key2"}{raw} .=  "\n".$line;
 			}else{
 				$mail{"$key"}{"$key2"}{raw} .=  $line;
 				my $temp = clean_string($mail{"$key"}{"$key2"}{raw});
@@ -279,7 +280,7 @@ sub decodeGuess{
 					}
 				}
 			}
-			
+
 			if (defined($type) && $type ne '' && defined($chars) && $chars ne '' && defined($enc) && $enc ne ''){
 				$content = $sA[($inc+1)];
 				if (defined($content) && $content ne '' && $content !~ /$bodysplit/g){
@@ -297,6 +298,7 @@ sub decodeGuess{
 						$content = MIME::Base64::decode($content);
 					}
 					if ($type eq "html" || $type eq "plain") {		# plain kann auch html enthalten: bsp 37	
+#print color("red"), "==================\ndebug $content", color("reset"), "\n";
 						my $temp = $content;
 						eval{
 							$temp = decode_utf8 $temp;
@@ -388,6 +390,8 @@ sub clean_body{
 	$input =~ s/Auto-Submitted: .*//g;				# 19
 	$input =~ s/MIME-Version: .*//g;				# 86
 	
+	#$input =~ s/(3D|22|=){3}//g;					# 98 3D=22=22
+	
 	return $input;
 }
 sub remove_strings {
@@ -472,12 +476,19 @@ sub printLine{
 			}else{
 				$temp = " $temp";
 			}
-			if (length("@paths$temp: ") > 7) {$spaces = "\t\t\t"}
+			#123456789012345678901234
+			#subject 0 utf8.b64 dec:		Mi
+			if (length("@paths$temp: ") > 8) {$spaces = "\t\t\t"}
 			if (length("@paths$temp: ") > 15) {$spaces = "\t\t"}
-			if (length("@paths$temp: ") > 23) {$spaces = "\t"}		# bsp 28
+			if (length("@paths$temp: ") > 24) {$spaces = "\t"}		# bsp 28 8
 			if (length("@paths$temp: ") > 31) {$spaces = ""}		# bsp 20
 			#binmode(STDOUT, ":utf8");		# vs 14: 绿茶网址	-> no warning utf8
-			print color("yellow"), "@paths", color("green"), $temp, color("yellow"), ": ", color("reset"), $spaces.$content . color("reset") ."\n";	# <<========
+			if ($content=~ m/.*\n.*/) { 
+				$content = "\n".$content ;
+				print color("yellow"), "@paths", color("green"), $temp, color("yellow"), ":", color("reset"), $content . color("reset") ."\n";	# <<========
+			}else{
+				print color("yellow"), "@paths", color("green"), $temp, color("yellow"), ":", color("reset"), $spaces.$content . color("reset") ."\n";	# <<========
+			}
 		}					
 		#print color("yellow"), "@paths $temp: ", color("reset"), "$content\n", color("reset");
 	}	
@@ -573,7 +584,7 @@ sub hashMail{
 			hashMail($body, "bounce");
 		}else{
 			if ("$head.$body" =~ /$bodysplit/g){ 	# some body-encriptions are in the header-info
-				$body = $head."\n\n".$body;			
+				$body = $head."\n\n".$body;		
 				decodeGuess($body, $key, "body");
 			} else { 								# some mails have just plain text bsp 79 > no decoding needed
 				$mail{"$key"}{"body"}{raw} = $body;
@@ -603,7 +614,7 @@ sub hashMail{
 			print color("red"), "|split3 n2 works|", color("reset"), "\n";
 		}
 		print color("red"), "==================\nMailcode is:", color("reset"), "\n";
-		#print $input;
+		print $input;
 	}
 }
 
