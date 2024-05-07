@@ -18,10 +18,11 @@ my $TO = "To:.*";                           		# To: "Messing Ragert, Ingrid  101
 my $SUBJECT = "Subject:.*";                    		# Subject: Event report Filed
 my $XSENDER = "X-SenderIP:.*";						# X-SenderIP: 84.....120 bsp 21
 my $SENDER = "sender:.*";							# 93 sender: bounces@jjjjjjjdfddsdsd.com
+my $RECIPIENT = "original_recipient:.*";			# 98 original_recipient: ge@kueb.net
 my $REPLYTO = "Reply-To:.*";
 my $RECEIVED = "Received:.*";						# Received: from ....ru (unknown [147....106]) bsp 23	
-my $XPAMD = "X-Spamd-Bar:.*";						# X-Spamd-Bar: +++ # 40
-my $XPAM = "X-Spam:.*";								# X-Spam: Yes # 41
+my $XSPAMD = "X-Spamd-Bar:.*";						# X-Spamd-Bar: +++ # 40
+my $XSPAM = "X-Spam:.*";							# X-Spam: Yes # 41
 		
 my $PIPE = "";
 my $base64 = "";
@@ -170,11 +171,15 @@ sub decodeGuess{
 				}
 			}
 
-			# left overs HEADERS
-			$mail{"$key"}{"$key2"}{raw} .=  $line;	# bsp 1, da keine encodings im header
-			my $temp = clean_string($mail{"$key"}{"$key2"}{raw});
-			if ($temp ne $mail{"$key"}{"$key2"}{raw}){
-				$mail{"$key"}{"$key2"}{cln} = $temp;
+			# left overs HEADERS # bsp 1, da keine encodings im header
+			if ($mail{"$key"}{"$key2"}{raw}){ # multilines bsp: 98 4* received
+				$mail{"$key"}{"$key2"}{raw} .=  "\n".$line;	
+			}else{
+				$mail{"$key"}{"$key2"}{raw} .=  $line;
+				my $temp = clean_string($mail{"$key"}{"$key2"}{raw});
+				if ($temp ne $mail{"$key"}{"$key2"}{raw}){
+					$mail{"$key"}{"$key2"}{cln} = $temp;
+				}
 			}
 		} 
 	}
@@ -349,8 +354,9 @@ sub clean_body{
 	$input =~ s/$XSENDER//g;
 	$input =~ s/$SENDER//g;
 	$input =~ s/$RECEIVED//g;
-	$input =~ s/$XPAMD//g;
-	$input =~ s/$XPAM//g;
+	$input =~ s/$XSPAMD//g;
+	$input =~ s/$XSPAM//g;
+	$input =~ s/$RECIPIENT//g;
 	
 	$input =~ s/\*\*\*\s?HEADER.*\*\*\*\n//g;		# 40 21
 	$input =~ s/\*\*\*\s?MESSAGE.*\*\*\*\n//g;		# 40 21
@@ -483,46 +489,59 @@ sub hashHeaderInfo{
 	my @headA = split (/\n(?=\S)/, $input);
 	foreach my $line (@headA) {
 		#print color("blue"), "content: ", color("green"), $line, color("reset"), "\n";
-		if ($line =~ m/^$M0/) {
+		if ($line =~ m/^$M0/i) {
 			$line =~ s/^[^=]*=//;
 			decodeGuess($line, $key, "sasl");
 		};
-		if ($line =~ m/$IP/) {
+		if ($line =~ m/$IP/i) {
 			$line =~ s/^[^=]*=//;
 			decodeGuess($line, $key, "ip");
 		};
-		if ($line =~ m/^$RECEIVED/) {
+		if ($line =~ m/^$RECEIVED/i) {
 			$line =~ s/^[^:]*:\s?//;
 			decodeGuess($line, $key, "received");
 		};
-		if ($line =~ m/^$DATE/) {
+		if ($line =~ m/^$DATE/i) {
 			$line =~ s/^[^,]*,\s?//;
 			decodeGuess($line, $key, "date");
 		};
-		if ($line =~ m/^$XSENDER/) {
+		if ($line =~ m/^$XSENDER/i) {
 			$line =~ s/^[^:]*:\s?//;
 			decodeGuess($line, $key, "xsender");
 		};
-		if ($line =~ m/^$SENDER/) {
+		if ($line =~ m/^$SENDER/i) {
 			$line =~ s/^[^:]*:\s?//;
 			decodeGuess($line, $key, "sender");
 		};
-		if ($line =~ m/^$FROM/) {
+		if ($line =~ m/^$FROM/i) {
 			$line =~ s/^[^:]*:\s?//;				# 65 kein \s nach from:
 			decodeGuess($line, $key, "from");
 		};
-		if ($line =~ m/^$TO/) {
+		if ($line =~ m/^$TO/i) {
 			$line =~ s/^[^:]*:\s?//;
 			decodeGuess($line, $key, "to");
 		};
-		if ($line =~ m/^$REPLYTO/) {
+		if ($line =~ m/^$REPLYTO/i) {
 			$line =~ s/^[^:]*:\s?//;
 			decodeGuess($line, $key, "replyto");
 		};
-		if ($line =~ m/^$SUBJECT/) {
+		if ($line =~ m/^$SUBJECT/i) {
 			$line =~ s/^[^:]*:\s?//;
 			decodeGuess($line, $key, "subject");
 		};
+		if ($line =~ m/^$XSPAM/i) {
+			$line =~ s/^[^:]*:\s?//;
+			decodeGuess($line, $key, "xspam");
+		};
+		if ($line =~ m/^$XSPAMD/i) {
+			$line =~ s/^[^:]*:\s?//;
+			decodeGuess($line, $key, "xspamd");
+		};
+		if ($line =~ m/^$RECIPIENT/i) {
+			$line =~ s/^[^:]*:\s?//;
+			decodeGuess($line, $key, "recipient");
+		};
+		
 	}
 }
 ###### mail = origin + [bounce] ######
