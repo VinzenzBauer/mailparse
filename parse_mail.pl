@@ -33,13 +33,12 @@ my $spaces = '';
 my %mail;
 my $bodysplit = qr/([cC]ontent-[tT].{3,20}: .*?\n)/;# 1	vs 79 (just plain text)
 my $debug = 0;
-my $maxlines = 30;
+my $maxlines = 20;
 
 #local $SIG{__WARN__} = sub {
 #	my $message = shift;
 #	print color("yellow"), "warning! : $message", color("reset"), "\n";
 #};
-
 #my @removals = qw( &nbsp; &copy; &quot; &zwnj; \x{200c} \x{34f} );		# bsp: 1 43
 
 ### SUBROUTINES
@@ -299,7 +298,6 @@ sub decodeGuess{
 						$content = MIME::Base64::decode($content);
 					}
 					if ($type eq "html" || $type eq "plain") {		# plain kann auch html enthalten: bsp 37	
-#print color("red"), "==================\ndebug $content", color("reset"), "\n";
 						my $temp = $content;
 						eval{
 							$temp = decode_utf8 $temp;
