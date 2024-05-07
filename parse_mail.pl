@@ -484,13 +484,18 @@ sub printMailItem{
 			#binmode(STDOUT, ":utf8");		# vs 14: 绿茶网址	-> no warning utf8
 			if ($content=~ m/(.*\n){$maxlines,}/){ # more than 10 multilines > shorten
 				$content = join "\n", (split "\n", $content)[0 .. $maxlines];
-				$content.= "\n...";
-			}
-			if ($content=~ m/.*\n.*/) { 
+				
 				$content = "\n".$content ;
 				print color("yellow"), "@paths", color("green"), $temp, color("yellow"), ":", color("reset"), $content . color("reset") ."\n";	# <<========
+				print "... ", color("red"), "<shortened>" , color("reset"), "... call with 999 for more text\n";
+				#$content.= "\n... <shortened> ... call with 999 for more text";
 			}else{
-				print color("yellow"), "@paths", color("green"), $temp, color("yellow"), ":", color("reset"), $spaces.$content . color("reset") ."\n";	# <<========
+				if ($content=~ m/.*\n.*/) { 
+					$content = "\n".$content ;
+					print color("yellow"), "@paths", color("green"), $temp, color("yellow"), ":", color("reset"), $content . color("reset") ."\n";	# <<========
+				}else{
+					print color("yellow"), "@paths", color("green"), $temp, color("yellow"), ":", color("reset"), $spaces.$content . color("reset") ."\n";	# <<========
+				}
 			}
 		}					
 		#print color("yellow"), "@paths $temp: ", color("reset"), "$content\n", color("reset");
@@ -625,9 +630,9 @@ sub hashMail{
 foreach my $line ( <STDIN> ) {
     $PIPE .= $line;
 }
-$debug = shift || 0;
-$maxlines = ($debug > 1)? $debug : $maxlines;
-$debug = ($debug == 1)? 1: 0;
+my $param = shift || 0;
+$debug = ($param == 1)? 1: 0;
+$maxlines = ($param < 2)? 25: $param;
 
 if ($debug eq 1){
 	print color("red"), "======================= :: RAW MAIL BELOW :: =======================", color("reset"), "\n";
