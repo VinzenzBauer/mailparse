@@ -248,7 +248,6 @@ sub decodeGuess{
 		my $cont = 0;
 		foreach my $m (@sA) {
 			if ($m =~ /$bodysplit/g){ # Content-Type:
-			
 				if ($m =~ /quoted-printable/i){
 					if ($order eq "TE" && $type ne ''){ $enc = "qp"; } 
 					if ($order eq "ET" && $type eq ''){ $enc = "qp"; }
@@ -260,7 +259,7 @@ sub decodeGuess{
 					if ($order eq "T E" || $order eq "E T"){ $enc = "b64"; }	# 86
 				}
 				if ($m =~ /7bit/i){
-					if ($order eq "TE" && $type ne ''){ $enc = "7b"; }	# 29
+					if ($order eq "TE" && $type ne ''){ $enc = "7b"; }			# 29
 					if ($order eq "ET" && $type eq ''){ $enc = "7b"; }
 					if ($order eq "T E" || $order eq "E T"){ $enc = "7b"; }		# 86
 				}
@@ -271,9 +270,9 @@ sub decodeGuess{
 				}
 				if ($m =~ /text\/(.*?)(;|$)/){									# 65 kein ;
 					$type = $1; 
-					if ($m =~    /text\/(.*?);\s?charset\s?=\s?"?(.*?)"?(;.*)?\n/){	# 11 41 43 54 81
+					if ($m =~      /text\/(.*?);\s?charset\s?=\s?"?(.*?)"?(;.*)?\n/){	# 11 41 43 54 81
 						$chars = $2;
-					} elsif ($sA[($inc+1)] =~ /^\s*charset\s?=\s?"?(.*?)"?(;.*)?\n/){ 	# 6 23 90
+					} elsif ($sA[($inc+1)] =~ /^\s*charset\s?=\s?"?(.*?)"?(;.*)?\n/){ 	# 6 23 90 100
 						$chars = $1;
 					} else{														# 65
 						$chars = "none";
@@ -360,7 +359,7 @@ sub clean_body{
 	$input =~ s/$RECIPIENT//g;
 	
 	$input =~ s/\*\*\*\s?HEADER.*\*\*\*\n//g;		# 40 21
-	$input =~ s/\*\*\*\s?MESSAGE.*\*\*\*\n//g;		# 40 21
+	$input =~ s/\*\*\*\s?MESSAGE.*\*\*\*\n?//g;		# 40 21 102	
 	$input =~ s/Message-ID:.*\n//g;					# 18
 	$input =~ s/--.*?\.kasserver\.com--.*//g;		# 21
 	$input =~ s/--.*?=_.*?--//g;					# 4			# --b1=_5rL5sE1gxdXRyxPfwuXw0g0LmvTlwggj9CiWdPjZk--
@@ -390,6 +389,7 @@ sub clean_body{
 	$input =~ s/MIME-Version: .*//g;				# 86
 	
 	#$input =~ s/(3D|22|=){3}//g;					# 98 3D=22=22
+	$input =~ s/^\s*charset\s?=\s?"?(.*?)"?(;.*)?\n//g;				# 100
 	
 	return $input;
 }
@@ -487,8 +487,8 @@ sub printMailItem{
 				
 				$content = "\n".$content ;
 				print color("yellow"), "@paths", color("green"), $temp, color("yellow"), ":", color("reset"), $content . color("reset") ."\n";	# <<========
-				print "... ", color("red"), "<shortened>" , color("reset"), "... call with 999 for more text\n";
-				#$content.= "\n... <shortened> ... call with 999 for more text";
+				print "... ", color("red"), "<content too long - shortened>" , color("reset"), " ... call with 999 for more text\n";
+				#$content.= "\n... <content too long - shortened> ... call with 999 for more text";
 			}else{
 				if ($content=~ m/.*\n.*/) { 
 					$content = "\n".$content ;
