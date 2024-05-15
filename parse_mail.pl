@@ -361,6 +361,7 @@ sub clean_body{
 	$input =~ s/\*\*\*\s?HEADER.*\*\*\*\n//g;		# 40 21
 	$input =~ s/\*\*\*\s?MESSAGE.*\*\*\*\n?//g;		# 40 21 102	
 	$input =~ s/Message-ID:.*\n//g;					# 18
+	$input =~ s/[-_=]{4,}.*[-_=]{4,}//g;			# 108		# --__-----------uwcmy3---__ 
 	$input =~ s/--.*?\.kasserver\.com--.*//g;		# 21
 	$input =~ s/--.*?=_.*?--//g;					# 4			# --b1=_5rL5sE1gxdXRyxPfwuXw0g0LmvTlwggj9CiWdPjZk--
 	$input =~ s/----_.*?-.*?-.*//g;					# 87		# ----_NmP-e7875a061ce819fc-Part_1
