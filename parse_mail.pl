@@ -386,8 +386,10 @@ sub clean_body{
 	$input =~ s/X-(Kas)?Loop: .*//g;				# 19
 	$input =~ s/Precedence: .*//g;					# 19
 	$input =~ s/Auto-Submitted: .*//g;				# 19
-	$input =~ s/MIME-Version: .*//g;				# 86
+	$input =~ s/MIME-Version: .*//gi;				# 86 106
 	$input =~ s/X-Original.*//g;					# 103
+	$input =~ s/References: .*//gi;					# 106
+
 	
 	#$input =~ s/(3D|22|=){3}//g;					# 98 3D=22=22
 	$input =~ s/^\s*charset\s?=\s?"?(.*?)"?(;.*)?\n//g;				# 100
