@@ -390,7 +390,10 @@ sub clean_body{
 	$input =~ s/MIME-Version: .*//gi;				# 86 106
 	$input =~ s/X-Original.*//g;					# 103
 	$input =~ s/References: .*//gi;					# 106
-
+	$input =~ s/.*!important;.*//gi;				# 101		# !important;
+	$input =~ s/X-Report-Abuse: .*//g;				# 112
+	$input =~ s/List-Unsubscribe[:-].*//g;			# 112
+	$input =~ s/List-Id: .*//g;			# 112
 	
 	#$input =~ s/(3D|22|=){3}//g;					# 98 3D=22=22
 	$input =~ s/^\s*charset\s?=\s?"?(.*?)"?(;.*)?\n//g;				# 100
