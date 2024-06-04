@@ -10,7 +10,7 @@ use Encode qw(encode decode decode_utf8);			# https://eli.thegreenplace.net/2007
 no warnings 'utf8';
 
 ### VARS
-my $M0 = "named_attribute: sasl_username=.*";  		# named_attribute: sasl_username=m05ad8d7
+my $M0 = "named_attribute: sasl_username=.*";  		# named_attribute: sasl_username=m0000000
 my $IP = "named_attribute: client_address=.*";   	# client_address=209....197
 my $DATE = "Date:.*[0-9]{2}:[0-9]{2}:[0-9]{2}.*";	# Date: Wed, 20 Mar 2024 16:31:40 +0000 (UTC)
 my $FROM = "From:.*";								# From: TPMS-SAS-Live <tpms-sas-outbox.de>
@@ -18,7 +18,7 @@ my $TO = "To:.*";                           		# To: "Messing Ragert, Ingrid  101
 my $SUBJECT = "Subject:.*";                    		# Subject: Event report Filed
 my $XSENDER = "X-SenderIP:.*";						# X-SenderIP: 84.....120 bsp 21
 my $SENDER = "sender:.*";							# 93 sender: bounces@jjjjjjjdfddsdsd.com
-my $RECIPIENT = "original_recipient:.*";			# 98 original_recipient: ge@kueb.net
+my $RECIPIENT = "original_recipient:.*";			# 98 original_recipient: ge@uuuuuu.net
 my $REPLYTO = "Reply-To:.*";
 my $RECEIVED = "Received:.*";						# Received: from ....ru (unknown [147....106]) bsp 23	
 my $XSPAMD = "X-Spamd-Bar:.*";						# X-Spamd-Bar: +++ # 40
@@ -393,7 +393,13 @@ sub clean_body{
 	$input =~ s/.*!important;.*//gi;				# 101		# !important;
 	$input =~ s/X-Report-Abuse: .*//g;				# 112
 	$input =~ s/List-Unsubscribe[:-].*//g;			# 112
-	$input =~ s/List-Id: .*//g;			# 112
+	$input =~ s/List-Id: .*//g;						# 112
+	$input =~ s/X-AntiAbuse: .*//g;					# 113
+	$input =~ s/X-Source[-:].*//g;					# 113
+	$input =~ s/X-SGantispam[-:].*//g;				# 113
+	$input =~ s/AntiSpam-.*//g;						# 113
+	$input =~ s/Authentication-Results: .*((\n\s)|(?!\n.).*){1,10}//g;		# 113
+	
 	
 	#$input =~ s/(3D|22|=){3}//g;					# 98 3D=22=22
 	$input =~ s/^\s*charset\s?=\s?"?(.*?)"?(;.*)?\n//g;				# 100
