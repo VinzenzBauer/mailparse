@@ -277,6 +277,9 @@ sub decodeGuess{
 					} else{														# 65
 						$chars = "none";
 					}
+					if ($debug eq 1){
+						print color("red"),"parsed type: $type and chars: $chars", color("reset"), "\n";
+					}
 				}
 			}
 
