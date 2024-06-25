@@ -644,6 +644,7 @@ sub hashMail{
 
 ### READ WHOLE FILE
 foreach my $line ( <STDIN> ) {
+	$line =~ s/\r\n/\012/;	# turn lineending to linux
     $PIPE .= $line;
 }
 my $param = shift || 0;
